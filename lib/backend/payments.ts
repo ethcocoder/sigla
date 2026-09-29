@@ -1,18 +1,4 @@
 import { assertSupabaseConfigured, supabase } from "@/lib/supabase";
-
-export async function submitRegistrationPayment(input: { amount: number; senderPhone: string; transactionReference: string }) {
-  assertSupabaseConfigured();
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-  if (userError) throw userError;
-  if (!userData.user) throw new Error("Your account session is not ready. Please sign in and try again.");
-
-  const { error } = await supabase.from("payments").insert({
-    user_id: userData.user.id,
-    type: "REGISTRATION",
-    amount: input.amount,
-    transaction_reference: input.transactionReference,
-    sender_phone: input.senderPhone,
-    status: "PENDING",
-  });
-  if (error) throw error;
-}
+async function currentUserId() { const { data, error } = await supabase.auth.getUser(); if (error) throw error; if (!data.user) throw new Error("Your account session is not ready. Please sign in and try again."); return data.user.id; }
+export async function submitRegistrationPayment(input: { amount: number; senderPhone: string; transactionReference: string }) { assertSupabaseConfigured(); const userId = await currentUserId(); const { error } = await supabase.from("payments").insert({ user_id: userId, type: "REGISTRATION", amount: input.amount, transaction_reference: input.transactionReference.trim(), sender_phone: input.senderPhone.trim(), status: "PENDING" }); if (error) throw error; }
+export async function submitPostPayment(input: { postId: string; amount: number; senderPhone: string; transactionReference: string }) { assertSupabaseConfigured(); const userId = await currentUserId(); const { error } = await supabase.from("payments").insert({ user_id: userId, post_id: input.postId, type: "POST", amount: input.amount, transaction_reference: input.transactionReference.trim(), sender_phone: input.senderPhone.trim(), status: "PENDING" }); if (error) throw error; }

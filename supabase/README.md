@@ -1,6 +1,6 @@
 # Supabase backend
 
-The migration in `migrations/202609290001_sigla_foundation.sql` is the local source of truth for the SIGLA relational backend. It has not been applied automatically because the session only discovered two inactive Supabase projects and neither is clearly SIGLA-specific.
+The migration in `migrations/202609290001_sigla_foundation.sql` is the local source of truth for the SIGLA relational backend. It is applied to the active SIGLA Supabase project and remains the local source of truth for the database contract.
 
 Before applying it:
 

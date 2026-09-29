@@ -12,13 +12,12 @@ import { getSafeErrorMessage } from "@/lib/error-message";
 import { useTranslation } from "@/lib/i18n-provider";
 import { listApprovedPosts } from "@/lib/backend/marketplace";
 import { showContactOptions } from "@/lib/contact";
-import { demoPosts } from "@/data/demo";
 import type { MarketplacePost } from "@/types/domain";
 
 export default function HomeScreen() {
   const colors = useColors("light");
   const { t } = useTranslation();
-  const [posts, setPosts] = useState<MarketplacePost[]>(demoPosts);
+  const [posts, setPosts] = useState<MarketplacePost[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,7 +45,7 @@ export default function HomeScreen() {
         <View style={[styles.hero, { backgroundColor: colors.primaryDark }]}>
           <View style={styles.heroCopy}><Text style={styles.eyebrow}>{t("brand.marketplace").toUpperCase()}</Text><Text style={styles.heroTitle}>{t("home.title")}</Text><Text style={styles.heroSubtitle}>{t("home.subtitle")}</Text></View>
           <View style={styles.heroMark}><Ionicons name="leaf" size={84} color="rgba(255,255,255,.18)" /></View>
-          <View style={styles.heroFooter}><View><Text style={styles.heroStat}>24/7</Text><Text style={styles.heroStatLabel}>community access</Text></View><View style={styles.heroDivider} /><View><Text style={styles.heroStat}>2 ways</Text><Text style={styles.heroStatLabel}>to connect</Text></View></View>
+
         </View>
         <SectionTitle title={t("home.latest")} actionLabel={t("home.seeAll")} onAction={() => router.push("/search")} />
         {error ? <View style={[styles.errorBox, { backgroundColor: "#FEF2F2", borderColor: "#FECACA" }]}><Text style={[styles.errorText, { color: colors.error }]}>{error}</Text></View> : null}

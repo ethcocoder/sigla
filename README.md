@@ -27,7 +27,7 @@ pnpm dev
 
 Copy `.env.example` to a local environment file. Only the Supabase project URL and publishable/anon key belong in the mobile bundle. Service-role keys, signing secrets, and privileged credentials must remain server-side and must never be committed.
 
-A Supabase project must be selected before migrations or live Auth/Storage work. The session currently sees two inactive projects that are not clearly SIGLA-specific; no project is restored or modified implicitly.
+The connected SIGLA Supabase project is configured through the local environment and is the source of truth for Auth, Postgres/RLS, and Storage. Keep the publishable key in local or deployment environment settings only.
 
 ## Testing
 

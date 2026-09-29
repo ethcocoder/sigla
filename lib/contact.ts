@@ -8,7 +8,7 @@ const methodLabels: Record<ContactMethod, string> = {
 };
 
 function getUrl(method: ContactMethod, post: MarketplacePost): string | null {
-  // Demo posters do not expose private phone numbers. Keep the action explicit
+  // Public listings expose contact actions without exposing private phone numbers. Keep the action explicit
   // until authenticated contact details are supplied by the backend.
   if (method === "CALL") return null;
   if (method === "TELEGRAM") return "https://t.me/sigla_support";

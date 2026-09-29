@@ -11,7 +11,6 @@ import { Radii, Spacing, Typography } from "@/lib/_core/theme";
 import { getSafeErrorMessage } from "@/lib/error-message";
 import { useTranslation } from "@/lib/i18n-provider";
 import { listApprovedPosts } from "@/lib/backend/marketplace";
-import { demoPosts } from "@/data/demo";
 import type { MarketplacePost, PostType } from "@/types/domain";
 
 export default function SearchScreen() {
@@ -19,7 +18,7 @@ export default function SearchScreen() {
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const [type, setType] = useState<PostType | "ALL">("ALL");
-  const [posts, setPosts] = useState<MarketplacePost[]>(demoPosts);
+  const [posts, setPosts] = useState<MarketplacePost[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const load = useCallback(async () => {

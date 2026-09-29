@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { ActionButton } from "@/components/action-button";
@@ -10,7 +10,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { useColors } from "@/hooks/use-colors";
 import { Radii, Spacing, Typography } from "@/lib/_core/theme";
 import { useTranslation } from "@/lib/i18n-provider";
-import { demoSettings } from "@/data/demo";
+import { getPlatformSettings } from "@/lib/backend/settings";
 import { createDraftPost } from "@/lib/backend/marketplace";
 import { uploadListingImage } from "@/lib/backend/storage";
 import { supabase } from "@/lib/supabase";
@@ -31,6 +31,8 @@ export default function NewPostScreen() {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [postFee, setPostFee] = useState<number | null>(null);
+  useEffect(() => { void getPlatformSettings().then((settings) => setPostFee(settings.postFee)).catch(() => setPostFee(null)); }, []);
   const canSubmit = useMemo(() => productName.trim().length >= 2 && Number(quantity) > 0 && unit.trim().length >= 1 && location.trim().length >= 2 && description.trim().length >= 10, [description, location, productName, quantity, unit]);
 
   const pickImage = async () => {
@@ -65,7 +67,7 @@ export default function NewPostScreen() {
   };
 
   if (submitted) {
-    return <View style={[styles.successRoot, { backgroundColor: colors.background }]}><View style={[styles.successIcon, { backgroundColor: colors.primarySoft }]}><Ionicons name="checkmark" size={34} color={colors.primaryDark} /></View><Text style={[styles.successTitle, { color: colors.foreground }]}>Draft ready for payment</Text><Text style={[styles.successBody, { color: colors.muted }]}>Your {type === "HAVE" ? "I HAVE" : "I NEED"} listing passed the local checks. The next step is to submit the {demoSettings.postFee} ETB posting payment for admin review.</Text><ActionButton label="Back to marketplace" onPress={() => router.replace("/(tabs)")} /></View>;
+    return <View style={[styles.successRoot, { backgroundColor: colors.background }]}><View style={[styles.successIcon, { backgroundColor: colors.primarySoft }]}><Ionicons name="checkmark" size={34} color={colors.primaryDark} /></View><Text style={[styles.successTitle, { color: colors.foreground }]}>Draft ready for payment</Text><Text style={[styles.successBody, { color: colors.muted }]}>Your {type === "HAVE" ? "I HAVE" : "I NEED"} listing passed the local checks. The next step is to submit the {postFee == null ? "Loading…" : `${postFee.toLocaleString()} ETB`} posting payment for admin review.</Text><ActionButton label="Back to marketplace" onPress={() => router.replace("/(tabs)")} /></View>;
   }
 
   return (
@@ -80,7 +82,7 @@ export default function NewPostScreen() {
         <Field label="Location" value={location} onChangeText={setLocation} placeholder="Addis Ababa" colors={colors} />
         <Field label="Description" value={description} onChangeText={setDescription} placeholder="Tell the community more about this listing" multiline colors={colors} />
         <View style={styles.field}><Text style={[styles.label, { color: colors.foreground }]}>Listing image <Text style={{ color: colors.muted, fontWeight: "400" }}>(optional)</Text></Text>{imageUri ? <View style={styles.imagePreviewWrap}><Image source={{ uri: imageUri }} contentFit="cover" style={styles.imagePreview} /><View style={styles.imageActions}><Pressable onPress={() => void pickImage()} accessibilityRole="button" style={[styles.imageAction, { backgroundColor: colors.surface, borderColor: colors.border }]}><Ionicons name="refresh-outline" size={16} color={colors.foreground} /><Text style={[styles.imageActionText, { color: colors.foreground }]}>Replace</Text></Pressable><Pressable onPress={() => setImageUri(null)} accessibilityRole="button" style={[styles.imageAction, { backgroundColor: colors.surface, borderColor: colors.border }]}><Ionicons name="trash-outline" size={16} color={colors.error} /><Text style={[styles.imageActionText, { color: colors.error }]}>Remove</Text></Pressable></View></View> : <Pressable onPress={() => void pickImage()} accessibilityRole="button" accessibilityLabel="Add listing image" style={[styles.uploadBox, { backgroundColor: colors.surface, borderColor: colors.border }]}><View style={[styles.uploadIcon, { backgroundColor: colors.primarySoft }]}><Ionicons name="image-outline" size={24} color={colors.primaryDark} /></View><View style={styles.uploadCopy}><Text style={[styles.uploadTitle, { color: colors.foreground }]}>Add a photo</Text><Text style={[styles.uploadBody, { color: colors.muted }]}>Show the product or item clearly</Text></View><Ionicons name="chevron-forward" size={18} color={colors.muted} /></Pressable>}{imageError ? <Text style={[styles.imageError, { color: colors.error }]}>{imageError}</Text> : null}</View>
-        <View style={[styles.feeNote, { backgroundColor: colors.secondarySoft }]}><Ionicons name="information-circle-outline" size={20} color={colors.secondaryDark} /><Text style={[styles.feeText, { color: colors.secondaryDark }]}>Posting fee: {demoSettings.postFee} ETB · Your post will be reviewed before publishing.</Text></View>
+        <View style={[styles.feeNote, { backgroundColor: colors.secondarySoft }]}><Ionicons name="information-circle-outline" size={20} color={colors.secondaryDark} /><Text style={[styles.feeText, { color: colors.secondaryDark }]}>Posting fee: {postFee == null ? "Loading…" : `${postFee.toLocaleString()} ETB`} · Your post will be reviewed before publishing.</Text></View>
         {formError ? <Text style={[styles.formError, { color: colors.error }]}>{formError}</Text> : null}
         <ActionButton label={submitting ? "Saving…" : "Review listing"} disabled={!canSubmit || submitting} style={({ pressed }) => [(!canSubmit || submitting) && { opacity: 0.45 }, pressed && { opacity: 0.8 }]} onPress={() => void submit()} />
       </ScrollView>

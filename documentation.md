@@ -22,13 +22,13 @@ Telebirr payment references are submitted for manual review. A reference number 
 ## Phase status
 
 - Phase 0 — COMPLETE: clean managed Expo starter inspected; no reusable source repository found.
-- Phase 1 — COMPLETE: SIGLA foundation, theme, localization, reusable UI, branded assets, and demo marketplace surfaces are implemented.
-- Phase 2 — IN PROGRESS: Supabase client/repository boundary and local schema/RLS migration are prepared. No project has been restored or modified because both discovered projects are inactive and their schema connections time out.
+- Phase 1 — COMPLETE: SIGLA foundation, theme, localization, reusable UI, branded assets, and marketplace surfaces are implemented.
+- Phase 2 — COMPLETE: Supabase client/repository boundary is connected to the active SIGLA project, the foundation schema and RLS are applied, and frontend fixture fallbacks have been removed.
 - Phases 3–21 — PENDING.
 
 ## Development data
 
-The current feed uses clearly local `demo` records in `data/demo.ts` to make the product surface usable before a Supabase project is selected. The repository boundary automatically uses these records only when public Supabase configuration is absent. These records are not production data and must not be seeded into production. When a selected project is configured, the same feed calls bounded Supabase queries for approved and unexpired posts.
+The feed, search, post details, notifications, platform settings, and listing creation use bounded Supabase queries. There is no frontend fixture fallback: an empty database renders empty states, and connection errors are shown to the user.
 
 ## Runtime limitations
 

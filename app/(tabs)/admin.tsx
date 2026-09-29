@@ -40,7 +40,7 @@ export default function AdminScreen() {
     }
   }, [isAdmin]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { const timer = setTimeout(() => void load(), 0); return () => clearTimeout(timer); }, [load]);
 
   if (loading || profileLoading || loadingData) return <View style={[styles.loading, { backgroundColor: colors.background }]}><ActivityIndicator color={colors.primary} /><Text style={[styles.loadingText, { color: colors.muted }]}>Loading administrator workspace…</Text></View>;
   if (!isAdmin || !session) return <View style={[styles.loading, { backgroundColor: colors.background }]}><Ionicons name="shield-outline" size={38} color={colors.muted} /><Text style={[styles.loadingText, { color: colors.foreground }]}>Administrator access required.</Text><ActionButton label="Back to marketplace" compact onPress={() => router.replace("/(tabs)")} /></View>;
