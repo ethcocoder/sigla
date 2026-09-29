@@ -6,10 +6,11 @@ SIGLA is an agricultural supply and demand marketplace for Android. It connects 
 
 - Expo Router + React Native + TypeScript + NativeWind
 - Managed Mobile runtime: Expo Web/Metro on `8081`, API on `3000`
-- Supabase target backend: Auth, Postgres/RLS, Storage, Edge Functions/server logic
+- Firebase Authentication: email/password and Google sign-in
+- Supabase target backend: Postgres/RLS, Storage, Edge Functions/server logic
 - English and Amharic localization
 
-Supabase is used instead of the Firebase architecture in the original product brief because Supabase is the configured backend available in this session. The domain states and collection concepts are preserved in relational form; see [`documentation.md`](./documentation.md).
+Firebase is used for client authentication while Supabase remains the data backend. The domain states and collection concepts are preserved in relational form; see [`documentation.md`](./documentation.md). Private Supabase writes still require the server-side Firebase-token bridge described below.
 
 ## Development
 
@@ -25,7 +26,7 @@ pnpm dev
 
 ## Environment
 
-Copy `.env.example` to a local environment file. Only the Supabase project URL and publishable/anon key belong in the mobile bundle. Service-role keys, signing secrets, and privileged credentials must remain server-side and must never be committed.
+Copy `.env.example` to a local environment file. The Firebase web configuration and Supabase URL/publishable key are client-safe values. Firebase service-account credentials, Supabase service-role keys, signing secrets, and privileged credentials must remain server-side and must never be committed.
 
 The connected SIGLA Supabase project is configured through the local environment and is the source of truth for Auth, Postgres/RLS, and Storage. Keep the publishable key in local or deployment environment settings only.
 
@@ -36,3 +37,9 @@ The foundation phase uses TypeScript, Expo lint, and Vitest. Backend/RLS, paymen
 ## Build handoff
 
 Android APK/AAB artifacts are prepared through the managed Dashboard build action after the source is checkpointed. Release artifacts are not claimed until the managed build returns an actual result.
+
+## Firebase authentication
+
+Email/password and Google authentication are wired through Firebase Auth. Enable **Email/Password** and **Google** under Firebase Console → Authentication → Sign-in method, and add the deployed web hostname under Authorized domains.
+
+Supabase RLS still protects private profiles, listings, payments, and notifications with `auth.uid()`. To enable those protected operations for Firebase users in production, configure a server-side Firebase Admin credential and Supabase service-role key, then route private operations through the server bridge. The client must not receive either secret.

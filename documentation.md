@@ -4,7 +4,7 @@
 
 | Product brief concept | SIGLA implementation |
 | --- | --- |
-| Firebase Authentication | Supabase Auth; phone authentication is the target provider path |
+| Firebase Authentication | Firebase Auth email/password and Google sign-in; Firebase UID is the client identity |
 | Firestore `users` | Supabase `profiles` table linked to `auth.users` |
 | Firestore `posts` | Supabase `posts` table with enum/check constraints |
 | Firebase Storage | Supabase Storage with per-user upload paths and server/client validation |
@@ -33,3 +33,7 @@ The feed, search, post details, notifications, platform settings, and listing cr
 ## Runtime limitations
 
 Expo Web is the primary available validation surface in this sandbox. Native push notification delivery, camera/photo permissions, device storage, and release Android builds require a native device or the managed Dashboard build action and are not inferred from Web preview behavior.
+
+## Firebase identity bridge
+
+Firebase Auth is the sign-in provider. Supabase remains the relational data store and must not be accessed with weakened RLS policies. A production bridge must verify Firebase ID tokens on the server and perform protected Supabase reads/writes with server-side credentials. Until that bridge is configured, public settings/feed reads work, while protected profile, listing-write, payment, notification, and admin operations must remain unavailable rather than bypass authorization.
