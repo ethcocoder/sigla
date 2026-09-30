@@ -28,7 +28,7 @@ pnpm dev
 3. Create a Firestore database and deploy `firestore.rules` and `firestore.indexes.json` with the Firebase CLI.
 4. The app creates user profiles in the `users` collection on signup or first Google sign-in. Platform settings live at `settings/platform`.
 
-The client uses Firebase Auth and Firestore only. Listing images are currently local preview media and are not uploaded; no storage service is configured.
+The client uses Firebase Auth and Firestore. Listing images are encoded as small data URLs and saved in each post's `imageUrls` field so the app works on Firebase's free Spark tier without requiring Firebase Storage billing. Images larger than the Firestore-safe limit are rejected with a smaller-image message.
 
 ## Seed an administrator
 

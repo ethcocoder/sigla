@@ -53,6 +53,7 @@ export default function NewPostScreen() {
   const [telegram, setTelegram] = useState("");
   const [facebook, setFacebook] = useState("");
   const [instagram, setInstagram] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [transactionReference, setTransactionReference] = useState("");
   const [imageError, setImageError] = useState<string | null>(null);
@@ -83,6 +84,7 @@ export default function NewPostScreen() {
         setTelegram(post.contactInfo.telegram ?? "");
         setFacebook(post.contactInfo.facebook ?? "");
         setInstagram(post.contactInfo.instagram ?? "");
+        setImageUrl(/^https?:\/\//i.test(post.imageUrl) ? post.imageUrl : "");
         setImageUri(post.imageUrl || null);
       })
       .catch((cause) =>
@@ -116,12 +118,13 @@ export default function NewPostScreen() {
   );
   const pickImage = async () => {
     setImageError(null);
+    setImageUrl("");
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ["images"],
         allowsEditing: true,
         aspect: [4, 3],
-        quality: 0.8,
+        quality: 0.6,
       });
       if (!result.canceled && result.assets[0]?.uri)
         setImageUri(result.assets[0].uri);
@@ -136,11 +139,16 @@ export default function NewPostScreen() {
       const user = firebaseAuth.currentUser;
       if (!user) throw new Error("Please sign in before creating a listing.");
       const profile = await getCurrentProfile(user.uid);
+      const typedImageUrl = imageUrl.trim();
+      if (typedImageUrl && !/^https?:\/\//i.test(typedImageUrl)) {
+        throw new Error("Enter a valid image URL starting with http:// or https://.");
+      }
+      const imageSource = typedImageUrl || imageUri;
       const imageUrls =
-        imageUri && imageUri.startsWith("file")
-          ? [await uploadListingImage(imageUri, user.uid)]
-          : imageUri
-            ? [imageUri]
+        imageSource && !/^https?:\/\//i.test(imageSource)
+          ? [await uploadListingImage(imageSource, user.uid)]
+          : imageSource
+            ? [imageSource]
             : [];
       const input = {
         type,
@@ -361,6 +369,19 @@ export default function NewPostScreen() {
           placeholder="@username or profile link"
           colors={colors}
         />
+        <Field
+          label="Image URL (optional)"
+          value={imageUrl}
+          onChangeText={(value) => {
+            setImageUrl(value);
+            if (/^https?:\/\//i.test(value.trim())) {
+              setImageUri(value.trim());
+              setImageError(null);
+            }
+          }}
+          placeholder="https://example.com/image.jpg"
+          colors={colors}
+        />
         <View style={styles.field}>
           <Text style={[styles.label, { color: colors.foreground }]}>
             Listing image{" "}
@@ -396,7 +417,10 @@ export default function NewPostScreen() {
                   </Text>
                 </Pressable>
                 <Pressable
-                  onPress={() => setImageUri(null)}
+                  onPress={() => {
+                    setImageUri(null);
+                    setImageUrl("");
+                  }}
                   style={[
                     styles.imageAction,
                     {

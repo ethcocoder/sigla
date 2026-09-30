@@ -35,6 +35,15 @@ export type NewDraftPost = {
   contactInfo: PostContactInfo;
 };
 type FirestorePost = Record<string, any>;
+function normalizeContactInfo(input: PostContactInfo): PostContactInfo {
+  return {
+    phone: input.phone.trim(),
+    ...(input.whatsapp?.trim() ? { whatsapp: input.whatsapp.trim() } : {}),
+    ...(input.telegram?.trim() ? { telegram: input.telegram.trim() } : {}),
+    ...(input.facebook?.trim() ? { facebook: input.facebook.trim() } : {}),
+    ...(input.instagram?.trim() ? { instagram: input.instagram.trim() } : {}),
+  };
+}
 function currentUserId() {
   const user = firebaseAuth.currentUser;
   if (!user) throw new Error("Please sign in before managing listings.");
@@ -71,6 +80,7 @@ function mapPost(id: string, row: FirestorePost): MarketplacePost {
 export async function createDraftPost(input: NewDraftPost) {
   const user = firebaseAuth.currentUser;
   if (!user) throw new Error("Please sign in before creating a listing.");
+  const contactInfo = normalizeContactInfo(input.contactInfo);
   const ref = await addDoc(collection(firestore, "posts"), {
     userId: user.uid,
     posterName: user.displayName ?? "SIGLA member",
@@ -82,8 +92,8 @@ export async function createDraftPost(input: NewDraftPost) {
     unit: input.unit.trim(),
     locationLabel: input.locationLabel.trim(),
     imageUrls: input.imageUrls,
-    contactInfo: input.contactInfo,
-    posterPhone: input.contactInfo.phone,
+    contactInfo,
+    posterPhone: contactInfo.phone,
     priceType: "CONTACT",
     status: "DRAFT",
     createdAt: serverTimestamp(),
@@ -93,6 +103,7 @@ export async function createDraftPost(input: NewDraftPost) {
 }
 export async function updateDraftPost(id: string, input: NewDraftPost) {
   const userId = currentUserId();
+  const contactInfo = normalizeContactInfo(input.contactInfo);
   await updateDoc(doc(firestore, "posts", id), {
     userId,
     type: input.type,
@@ -102,8 +113,8 @@ export async function updateDraftPost(id: string, input: NewDraftPost) {
     unit: input.unit.trim(),
     locationLabel: input.locationLabel.trim(),
     imageUrls: input.imageUrls,
-    contactInfo: input.contactInfo,
-    posterPhone: input.contactInfo.phone,
+    contactInfo,
+    posterPhone: contactInfo.phone,
     status: "DRAFT",
     rejectionReason: null,
     updatedAt: serverTimestamp(),

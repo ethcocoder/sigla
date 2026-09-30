@@ -10,6 +10,7 @@ import "@/lib/_core/nativewind-pressable";
 import { LanguageProvider } from "@/lib/i18n-provider";
 import { ThemeProvider } from "@/lib/theme-provider";
 import { AuthGate } from "@/components/auth-gate";
+import { AppDialogProvider } from "@/components/app-dialog";
 import {
   SafeAreaFrameContext,
   SafeAreaInsetsContext,
@@ -93,7 +94,9 @@ export default function RootLayout() {
   const wrapped = (
     <LanguageProvider>
       <ThemeProvider>
-        <AuthGate>{content}</AuthGate>
+        <AppDialogProvider>
+          <AuthGate>{content}</AuthGate>
+        </AppDialogProvider>
       </ThemeProvider>
     </LanguageProvider>
   );

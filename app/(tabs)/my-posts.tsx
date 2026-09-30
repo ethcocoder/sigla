@@ -1,6 +1,5 @@
 import { useCallback, useState } from "react";
 import {
-  Alert,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -20,6 +19,7 @@ import {
 } from "@/lib/backend/marketplace";
 import { listUserPosts } from "@/lib/backend/profile";
 import { Radii, Spacing, Typography } from "@/lib/_core/theme";
+import { confirmAppDialog } from "@/lib/app-dialog";
 
 export default function MyPostsScreen() {
   const colors = useColors("light");
@@ -50,33 +50,35 @@ export default function MyPostsScreen() {
       void load();
     }, [load]),
   );
+  const performDelete = async (id: string) => {
+    setBusyId(id);
+    setError(null);
+    try {
+      await deleteUserPost(id);
+      setPosts((items) => items.filter((item) => item.id !== id));
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "Unable to delete the listing.",
+      );
+    } finally {
+      setBusyId(null);
+    }
+  };
   const remove = (id: string) => {
-    Alert.alert(
-      "Delete listing?",
-      "This listing will be permanently removed from your portal.",
-      [
-        { text: "Cancel", style: "cancel" },
+    void confirmAppDialog({
+      title: "Delete listing?",
+      message: "This listing will be permanently removed from your portal.",
+      actions: [
+        { label: "Cancel", variant: "outline" },
         {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            setBusyId(id);
-            try {
-              await deleteUserPost(id);
-              setPosts((items) => items.filter((item) => item.id !== id));
-            } catch (cause) {
-              setError(
-                cause instanceof Error
-                  ? cause.message
-                  : "Unable to delete the listing.",
-              );
-            } finally {
-              setBusyId(null);
-            }
-          },
+          label: "Delete",
+          variant: "destructive",
+          onPress: () => performDelete(id),
         },
       ],
-    );
+    });
   };
   const submit = async (id: string) => {
     setBusyId(id);
