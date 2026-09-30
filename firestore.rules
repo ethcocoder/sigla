@@ -4,6 +4,7 @@ service cloud.firestore {
     function signedIn() { return request.auth != null; }
     function admin() { return signedIn() && request.auth.token.admin == true; }
     function owner(userId) { return signedIn() && request.auth.uid == userId; }
+    function activeUser() { return signedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'ACTIVE'; }
 
     match /users/{userId} {
       allow read: if owner(userId) || admin();
@@ -13,9 +14,9 @@ service cloud.firestore {
     }
     match /posts/{postId} {
       allow read: if resource.data.status == 'APPROVED' || (signedIn() && resource.data.userId == request.auth.uid) || admin();
-      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
-      allow update: if (signedIn() && resource.data.userId == request.auth.uid) || admin();
-      allow delete: if (signedIn() && resource.data.userId == request.auth.uid) || admin();
+      allow create: if activeUser() && request.resource.data.userId == request.auth.uid;
+      allow update: if admin() || (activeUser() && resource.data.userId == request.auth.uid && request.resource.data.userId == request.auth.uid);
+      allow delete: if admin() || (activeUser() && resource.data.userId == request.auth.uid);
     }
     match /payments/{paymentId} {
       allow read: if admin() || (signedIn() && resource.data.userId == request.auth.uid);

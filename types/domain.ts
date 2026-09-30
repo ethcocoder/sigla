@@ -29,7 +29,13 @@ export interface UserProfile {
   locationLabel?: string;
   avatarUrl?: string;
 }
-
+export interface PostContactInfo {
+  phone: string;
+  whatsapp?: string;
+  telegram?: string;
+  facebook?: string;
+  instagram?: string;
+}
 export interface MarketplacePost {
   id: string;
   type: PostType;
@@ -48,8 +54,8 @@ export interface MarketplacePost {
   createdAtLabel: string;
   expiresAt?: string;
   contactMethods: ContactMethod[];
+  contactInfo: PostContactInfo;
 }
-
 export interface PaymentRecord {
   id: string;
   type: PaymentType;
@@ -59,7 +65,6 @@ export interface PaymentRecord {
   status: PaymentStatus;
   submittedAt: string;
 }
-
 export interface NotificationItem {
   id: string;
   title: string;
@@ -68,13 +73,13 @@ export interface NotificationItem {
   createdAtLabel: string;
   read: boolean;
 }
-
 export interface MarketplaceSettings {
   appNameEn: string;
   appNameAm: string;
   registrationFee: number;
   postFee: number;
   telebirrNumber: string;
+  telebirrAccountName: string;
   maxPostsPerDay: number;
   maxImagesPerPost: number;
   postExpirationDays: number;
@@ -84,7 +89,6 @@ export interface MarketplaceSettings {
   supportPhone?: string;
   supportTelegram?: string;
 }
-
 export interface FilterState {
   query: string;
   type: PostType | "ALL";

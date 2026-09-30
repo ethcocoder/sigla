@@ -10,11 +10,19 @@ import "@/lib/_core/nativewind-pressable";
 import { LanguageProvider } from "@/lib/i18n-provider";
 import { ThemeProvider } from "@/lib/theme-provider";
 import { AuthGate } from "@/components/auth-gate";
-import { SafeAreaFrameContext, SafeAreaInsetsContext, SafeAreaProvider, initialWindowMetrics } from "react-native-safe-area-context";
+import {
+  SafeAreaFrameContext,
+  SafeAreaInsetsContext,
+  SafeAreaProvider,
+  initialWindowMetrics,
+} from "react-native-safe-area-context";
 import type { EdgeInsets, Metrics, Rect } from "react-native-safe-area-context";
 
 import { trpc, createTRPCClient } from "@/lib/trpc";
-import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-runtime";
+import {
+  initManusRuntime,
+  subscribeSafeAreaInsets,
+} from "@/lib/_core/manus-runtime";
 
 const DEFAULT_WEB_INSETS: EdgeInsets = { top: 0, right: 0, bottom: 0, left: 0 };
 const DEFAULT_WEB_FRAME: Rect = { x: 0, y: 0, width: 0, height: 0 };
@@ -27,18 +35,38 @@ export default function RootLayout() {
   const [insets, setInsets] = useState<EdgeInsets>(initialInsets);
   const [frame, setFrame] = useState<Rect>(initialFrame);
 
-  useEffect(() => { initManusRuntime(); }, []);
-  const handleSafeAreaUpdate = useCallback((metrics: Metrics) => { setInsets(metrics.insets); setFrame(metrics.frame); }, []);
+  useEffect(() => {
+    initManusRuntime();
+  }, []);
+  const handleSafeAreaUpdate = useCallback((metrics: Metrics) => {
+    setInsets(metrics.insets);
+    setFrame(metrics.frame);
+  }, []);
   useEffect(() => {
     if (Platform.OS !== "web") return;
     return subscribeSafeAreaInsets(handleSafeAreaUpdate);
   }, [handleSafeAreaUpdate]);
 
-  const [queryClient] = useState(() => new QueryClient({ defaultOptions: { queries: { refetchOnWindowFocus: false, retry: 1 } } }));
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: { queries: { refetchOnWindowFocus: false, retry: 1 } },
+      }),
+  );
   const [trpcClient] = useState(() => createTRPCClient());
   const providerInitialMetrics = useMemo(() => {
-    const metrics = initialWindowMetrics ?? { insets: initialInsets, frame: initialFrame };
-    return { ...metrics, insets: { ...metrics.insets, top: Math.max(metrics.insets.top, 16), bottom: Math.max(metrics.insets.bottom, 12) } };
+    const metrics = initialWindowMetrics ?? {
+      insets: initialInsets,
+      frame: initialFrame,
+    };
+    return {
+      ...metrics,
+      insets: {
+        ...metrics.insets,
+        top: Math.max(metrics.insets.top, 16),
+        bottom: Math.max(metrics.insets.bottom, 12),
+      },
+    };
   }, [initialInsets, initialFrame]);
 
   const content = (
@@ -48,8 +76,13 @@ export default function RootLayout() {
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="oauth/callback" />
-            <Stack.Screen name="post/[id]" options={{ presentation: "modal" }} />
+            <Stack.Screen
+              name="post/[id]"
+              options={{ presentation: "modal" }}
+            />
             <Stack.Screen name="post/new" />
+            <Stack.Screen name="settings" options={{ presentation: "modal" }} />
+            <Stack.Screen name="support" options={{ presentation: "modal" }} />
           </Stack>
           <StatusBar style="dark" />
         </QueryClientProvider>
@@ -57,9 +90,27 @@ export default function RootLayout() {
     </GestureHandlerRootView>
   );
 
-  const wrapped = <LanguageProvider><ThemeProvider><AuthGate>{content}</AuthGate></ThemeProvider></LanguageProvider>;
+  const wrapped = (
+    <LanguageProvider>
+      <ThemeProvider>
+        <AuthGate>{content}</AuthGate>
+      </ThemeProvider>
+    </LanguageProvider>
+  );
   if (Platform.OS === "web") {
-    return <SafeAreaProvider initialMetrics={providerInitialMetrics}><SafeAreaFrameContext.Provider value={frame}><SafeAreaInsetsContext.Provider value={insets}>{wrapped}</SafeAreaInsetsContext.Provider></SafeAreaFrameContext.Provider></SafeAreaProvider>;
+    return (
+      <SafeAreaProvider initialMetrics={providerInitialMetrics}>
+        <SafeAreaFrameContext.Provider value={frame}>
+          <SafeAreaInsetsContext.Provider value={insets}>
+            {wrapped}
+          </SafeAreaInsetsContext.Provider>
+        </SafeAreaFrameContext.Provider>
+      </SafeAreaProvider>
+    );
   }
-  return <SafeAreaProvider initialMetrics={providerInitialMetrics}>{wrapped}</SafeAreaProvider>;
+  return (
+    <SafeAreaProvider initialMetrics={providerInitialMetrics}>
+      {wrapped}
+    </SafeAreaProvider>
+  );
 }
