@@ -1,4 +1,11 @@
-import { assertSupabaseConfigured, supabase } from "@/lib/supabase";
+import { doc, getDoc } from "firebase/firestore";
 import type { MarketplaceSettings } from "@/types/domain";
-type SettingsRow = { app_name_en: string; app_name_am: string; registration_fee: number; post_fee: number; telebirr_number: string; max_posts_per_day: number; max_images_per_post: number; post_expiration_days: number; allow_new_registrations: boolean; require_post_approval: boolean; require_user_approval: boolean; support_phone: string | null; support_telegram: string | null };
-export async function getPlatformSettings(): Promise<MarketplaceSettings> { assertSupabaseConfigured(); const { data, error } = await supabase.from("platform_settings").select("app_name_en,app_name_am,registration_fee,post_fee,telebirr_number,max_posts_per_day,max_images_per_post,post_expiration_days,allow_new_registrations,require_post_approval,require_user_approval,support_phone,support_telegram").eq("id", "platform").single(); if (error) throw error; const row = data as SettingsRow; return { appNameEn: row.app_name_en, appNameAm: row.app_name_am, registrationFee: Number(row.registration_fee), postFee: Number(row.post_fee), telebirrNumber: row.telebirr_number, maxPostsPerDay: row.max_posts_per_day, maxImagesPerPost: row.max_images_per_post, postExpirationDays: row.post_expiration_days, allowNewRegistrations: row.allow_new_registrations, requirePostApproval: row.require_post_approval, requireUserApproval: row.require_user_approval, supportPhone: row.support_phone ?? undefined, supportTelegram: row.support_telegram ?? undefined }; }
+import { firestore } from "@/lib/firebase";
+
+const defaults: MarketplaceSettings = { appNameEn: "SIGLA", appNameAm: "ሲግላ", registrationFee: 0, postFee: 0, telebirrNumber: "", maxPostsPerDay: 10, maxImagesPerPost: 1, postExpirationDays: 30, allowNewRegistrations: true, requirePostApproval: true, requireUserApproval: true };
+export async function getPlatformSettings(): Promise<MarketplaceSettings> {
+  const snapshot = await getDoc(doc(firestore, "settings", "platform"));
+  if (!snapshot.exists()) return defaults;
+  const data = snapshot.data();
+  return { ...defaults, appNameEn: data.appNameEn ?? defaults.appNameEn, appNameAm: data.appNameAm ?? defaults.appNameAm, registrationFee: Number(data.registrationFee ?? 0), postFee: Number(data.postFee ?? 0), telebirrNumber: data.telebirrNumber ?? "", maxPostsPerDay: Number(data.maxPostsPerDay ?? defaults.maxPostsPerDay), maxImagesPerPost: Number(data.maxImagesPerPost ?? defaults.maxImagesPerPost), postExpirationDays: Number(data.postExpirationDays ?? defaults.postExpirationDays), allowNewRegistrations: data.allowNewRegistrations ?? true, requirePostApproval: data.requirePostApproval ?? true, requireUserApproval: data.requireUserApproval ?? true, supportPhone: data.supportPhone || undefined, supportTelegram: data.supportTelegram || undefined };
+}

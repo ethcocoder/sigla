@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@/components/ionicons";
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { router } from "expo-router";
@@ -6,13 +6,13 @@ import { router } from "expo-router";
 import { ActionButton } from "@/components/action-button";
 import { BrandLockup } from "@/components/brand-lockup";
 import { useColors } from "@/hooks/use-colors";
-import { useSupabaseAuth } from "@/hooks/use-supabase-auth";
+import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { listAdminPayments, listAdminPosts, reviewPayment, reviewPost, getAdminSettings, updateAdminSettings, type AdminPaymentRow, type AdminPostRow } from "@/lib/backend/admin";
 import { Radii, Spacing, Typography } from "@/lib/_core/theme";
 
 export default function AdminScreen() {
   const colors = useColors("light");
-  const { session, isAdmin, loading, profileLoading } = useSupabaseAuth();
+  const { session, isAdmin, loading, profileLoading } = useFirebaseAuth();
   const [posts, setPosts] = useState<AdminPostRow[]>([]);
   const [payments, setPayments] = useState<AdminPaymentRow[]>([]);
   const [settings, setSettings] = useState({ registrationFee: "0", postFee: "0", telebirrNumber: "", supportPhone: "", supportTelegram: "", requirePostApproval: true, requireUserApproval: true });

@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function admin() { return signedIn() && request.auth.token.admin == true; }
+    function owner(userId) { return signedIn() && request.auth.uid == userId; }
+
+    match /users/{userId} {
+      allow read: if owner(userId) || admin();
+      allow create: if owner(userId);
+      allow update: if owner(userId) || admin();
+      allow delete: if admin();
+    }
+    match /posts/{postId} {
+      allow read: if resource.data.status == 'APPROVED' || (signedIn() && resource.data.userId == request.auth.uid) || admin();
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if (signedIn() && resource.data.userId == request.auth.uid) || admin();
+      allow delete: if (signedIn() && resource.data.userId == request.auth.uid) || admin();
+    }
+    match /payments/{paymentId} {
+      allow read: if admin() || (signedIn() && resource.data.userId == request.auth.uid);
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if admin();
+      allow delete: if admin();
+    }
+    match /notifications/{notificationId} {
+      allow read, update: if signedIn() && resource.data.userId == request.auth.uid;
+      allow create, delete: if admin();
+    }
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if admin();
+    }
+  }
+}

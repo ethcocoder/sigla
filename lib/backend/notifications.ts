@@ -1,4 +1,10 @@
-import { assertSupabaseConfigured, supabase } from "@/lib/supabase";
+import { collection, doc, getDocs, limit, orderBy, query, updateDoc, where } from "firebase/firestore";
 import type { NotificationItem } from "@/types/domain";
-export async function listNotifications(userId: string): Promise<NotificationItem[]> { assertSupabaseConfigured(); const { data, error } = await supabase.from("notifications").select("id,type,title,body,read_at,created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(50); if (error) throw error; return (data ?? []).map((row) => ({ id: row.id, title: row.title, body: row.body, kind: row.type, createdAtLabel: new Date(row.created_at).toLocaleDateString(), read: Boolean(row.read_at) })); }
-export async function markNotificationRead(id: string) { assertSupabaseConfigured(); const { error } = await supabase.from("notifications").update({ read_at: new Date().toISOString() }).eq("id", id); if (error) throw error; }
+import { firestore } from "@/lib/firebase";
+import { toDate } from "./firestore-helpers";
+
+export async function listNotifications(userId: string): Promise<NotificationItem[]> {
+  const snapshot = await getDocs(query(collection(firestore, "notifications"), where("userId", "==", userId), orderBy("createdAt", "desc"), limit(50)));
+  return snapshot.docs.map((item) => { const row = item.data(); return { id: item.id, title: row.title, body: row.body, kind: row.type, createdAtLabel: toDate(row.createdAt).toLocaleDateString(), read: Boolean(row.readAt) }; });
+}
+export async function markNotificationRead(id: string) { await updateDoc(doc(firestore, "notifications", id), { readAt: new Date() }); }

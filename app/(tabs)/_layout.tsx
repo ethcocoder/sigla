@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@/components/ionicons";
 import { Tabs } from "expo-router";
 import { useColors } from "@/hooks/use-colors";
 

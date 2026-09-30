@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@/components/ionicons";
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { EmptyState } from "@/components/empty-state";
@@ -7,10 +7,10 @@ import { Radii, Spacing, Typography } from "@/lib/_core/theme";
 import { getSafeErrorMessage } from "@/lib/error-message";
 import { useTranslation } from "@/lib/i18n-provider";
 import { listNotifications, markNotificationRead } from "@/lib/backend/notifications";
-import { useSupabaseAuth } from "@/hooks/use-supabase-auth";
+import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import type { NotificationItem } from "@/types/domain";
 export default function NotificationsScreen() {
-  const colors = useColors("light"); const { t } = useTranslation(); const { session } = useSupabaseAuth();
+  const colors = useColors("light"); const { t } = useTranslation(); const { session } = useFirebaseAuth();
   const [items, setItems] = useState<NotificationItem[]>([]); const [loading, setLoading] = useState(true); const [error, setError] = useState<string | null>(null); const userId = session?.user.id;
   const load = useCallback(async () => { if (!userId) return; setLoading(true); try { setError(null); setItems(await listNotifications(userId)); } catch (cause) { setError(getSafeErrorMessage(cause, "network")); } finally { setLoading(false); } }, [userId]);
   useEffect(() => { const timer = setTimeout(() => void load(), 0); return () => clearTimeout(timer); }, [load]);

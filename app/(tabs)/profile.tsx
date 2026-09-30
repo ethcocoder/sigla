@@ -1,10 +1,10 @@
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@/components/ionicons";
 import { router } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { BrandLockup } from "@/components/brand-lockup";
 import { useColors } from "@/hooks/use-colors";
-import { useSupabaseAuth } from "@/hooks/use-supabase-auth";
+import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { statusLabel } from "@/lib/backend/profile";
 import { Radii, Spacing, Typography } from "@/lib/_core/theme";
 import { useTranslation } from "@/lib/i18n-provider";
@@ -13,7 +13,7 @@ import { firebaseAuth, signOut } from "@/lib/firebase";
 export default function ProfileScreen() {
   const colors = useColors("light");
   const { language, setLanguage, t } = useTranslation();
-  const { session, profile, isAdmin, profileLoading } = useSupabaseAuth();
+  const { session, profile, isAdmin, profileLoading } = useFirebaseAuth();
   const profileName = profile?.name || session?.user.user_metadata?.name || session?.user.email || "SIGLA member";
   const profileContact = profile?.phone || session?.user.email || "Authenticated account";
   const accountStatus = profile?.status ? statusLabel(profile.status) : profileLoading ? "Loading" : "Registered";

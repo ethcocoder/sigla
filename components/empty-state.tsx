@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@/components/ionicons";
 import { StyleSheet, Text, View } from "react-native";
 
 import { ActionButton } from "@/components/action-button";

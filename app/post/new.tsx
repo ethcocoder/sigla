@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@/components/ionicons";
 import * as ImagePicker from "expo-image-picker";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
@@ -13,7 +13,7 @@ import { useTranslation } from "@/lib/i18n-provider";
 import { getPlatformSettings } from "@/lib/backend/settings";
 import { createDraftPost } from "@/lib/backend/marketplace";
 import { uploadListingImage } from "@/lib/backend/storage";
-import { supabase } from "@/lib/supabase";
+import { firebaseAuth } from "@/lib/firebase";
 import type { PostType } from "@/types/domain";
 
 export default function NewPostScreen() {
@@ -54,9 +54,9 @@ export default function NewPostScreen() {
     setSubmitting(true);
     setFormError(null);
     try {
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      if (userError || !userData.user) throw new Error("Please sign in before creating a listing.");
-      const imageUrls = imageUri ? [await uploadListingImage(imageUri, userData.user.id)] : [];
+      const user = firebaseAuth.currentUser;
+      if (!user) throw new Error("Please sign in before creating a listing.");
+      const imageUrls = imageUri ? [await uploadListingImage(imageUri, user.uid)] : [];
       await createDraftPost({ type, productName, description, quantity: Number(quantity), unit, locationLabel: location, imageUrls });
       setSubmitted(true);
     } catch (cause) {

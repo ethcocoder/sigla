@@ -1,11 +1,32 @@
-import { assertSupabaseConfigured, supabase } from "@/lib/supabase";
+import { addDoc, collection, doc, getDoc, getDocs, limit, orderBy, query, serverTimestamp, updateDoc, where } from "firebase/firestore";
 import type { MarketplacePost, PostType } from "@/types/domain";
+import { firebaseAuth, firestore } from "@/lib/firebase";
+import { toDate, toIso } from "./firestore-helpers";
+
 export type MarketplaceQuery = { limit?: number; cursor?: string; type?: PostType };
-type PostRow = { id: string; type: PostType; category_id: string | null; category_label: string; product_name: string; description: string; quantity: number; unit: string; price: number | null; price_type: MarketplacePost["priceType"]; location_label: string; image_urls: string[]; status: MarketplacePost["status"]; created_at: string; expires_at: string | null; profiles: { id: string; name: string; location_label: string | null } | null };
 export type NewDraftPost = { type: PostType; productName: string; description: string; quantity: number; unit: string; locationLabel: string; imageUrls: string[] };
-const postSelect = "id,type,category_id,category_label,product_name,description,quantity,unit,price,price_type,location_label,image_urls,status,created_at,expires_at,profiles!posts_user_id_fkey(id,name,location_label)";
-function mapPost(row: PostRow): MarketplacePost { return { id: row.id, type: row.type, categoryId: row.category_id ?? "", categoryLabel: row.category_label, productName: row.product_name, description: row.description, quantity: Number(row.quantity), unit: row.unit, price: row.price == null ? undefined : Number(row.price), priceType: row.price_type, locationLabel: row.location_label, imageUrl: row.image_urls?.[0] ?? "", status: row.status, poster: { id: row.profiles?.id ?? "unknown", name: row.profiles?.name || "SIGLA member", locationLabel: row.profiles?.location_label ?? row.location_label }, createdAtLabel: new Date(row.created_at).toLocaleDateString(), expiresAt: row.expires_at ?? undefined, contactMethods: ["CALL"] }; }
-export async function createDraftPost(input: NewDraftPost) { assertSupabaseConfigured(); const { data: userData, error: userError } = await supabase.auth.getUser(); if (userError || !userData.user) throw new Error("Please sign in before creating a listing."); const { data, error } = await supabase.from("posts").insert({ user_id: userData.user.id, type: input.type, category_label: "Other", product_name: input.productName.trim(), description: input.description.trim(), quantity: input.quantity, unit: input.unit.trim(), location_label: input.locationLabel.trim(), image_urls: input.imageUrls, price_type: "CONTACT", status: "DRAFT" }).select("id").single(); if (error) throw error; return data.id as string; }
-export async function markPostPaymentPending(postId: string) { assertSupabaseConfigured(); const { error } = await supabase.from("posts").update({ status: "PAYMENT_PENDING" }).eq("id", postId); if (error) throw error; }
-export async function listApprovedPosts(query: MarketplaceQuery = {}): Promise<MarketplacePost[]> { assertSupabaseConfigured(); let request = supabase.from("posts").select(postSelect).eq("status", "APPROVED").order("created_at", { ascending: false }).limit(Math.min(query.limit ?? 12, 50)); if (query.type) request = request.eq("type", query.type); if (query.cursor) request = request.lt("created_at", query.cursor); const { data, error } = await request; if (error) throw error; return (data as unknown as PostRow[] | null ?? []).map(mapPost); }
-export async function getPostById(id: string): Promise<MarketplacePost | null> { assertSupabaseConfigured(); const { data, error } = await supabase.from("posts").select(postSelect).eq("id", id).maybeSingle(); if (error) throw error; return data ? mapPost(data as unknown as PostRow) : null; }
+
+type FirestorePost = Record<string, any>;
+function mapPost(id: string, row: FirestorePost): MarketplacePost {
+  const createdAt = toDate(row.createdAt);
+  return { id, type: row.type, categoryId: row.categoryId ?? "", categoryLabel: row.categoryLabel ?? "Other", productName: row.productName, description: row.description, quantity: Number(row.quantity), unit: row.unit, price: row.price == null ? undefined : Number(row.price), priceType: row.priceType ?? "CONTACT", locationLabel: row.locationLabel, imageUrl: row.imageUrls?.[0] ?? "", status: row.status, poster: { id: row.userId ?? "unknown", name: row.posterName || "SIGLA member", locationLabel: row.posterLocationLabel ?? row.locationLabel }, createdAtLabel: createdAt.toLocaleDateString(), expiresAt: row.expiresAt ? toIso(row.expiresAt) : undefined, contactMethods: ["CALL"] };
+}
+
+export async function createDraftPost(input: NewDraftPost) {
+  const user = firebaseAuth.currentUser;
+  if (!user) throw new Error("Please sign in before creating a listing.");
+  const ref = await addDoc(collection(firestore, "posts"), { userId: user.uid, posterName: user.displayName ?? "SIGLA member", type: input.type, categoryLabel: "Other", productName: input.productName.trim(), description: input.description.trim(), quantity: input.quantity, unit: input.unit.trim(), locationLabel: input.locationLabel.trim(), imageUrls: input.imageUrls, priceType: "CONTACT", status: "DRAFT", createdAt: serverTimestamp() });
+  return ref.id;
+}
+
+export async function markPostPaymentPending(postId: string) { await updateDoc(doc(firestore, "posts", postId), { status: "PAYMENT_PENDING", updatedAt: serverTimestamp() }); }
+
+export async function listApprovedPosts(queryOptions: MarketplaceQuery = {}): Promise<MarketplacePost[]> {
+  const snapshot = await getDocs(query(collection(firestore, "posts"), where("status", "==", "APPROVED"), orderBy("createdAt", "desc"), limit(Math.min(queryOptions.limit ?? 12, 50))));
+  return snapshot.docs.map((item) => mapPost(item.id, item.data())).filter((item) => !queryOptions.type || item.type === queryOptions.type);
+}
+
+export async function getPostById(id: string): Promise<MarketplacePost | null> {
+  const snapshot = await getDoc(doc(firestore, "posts", id));
+  return snapshot.exists() ? mapPost(snapshot.id, snapshot.data()) : null;
+}
