@@ -32,6 +32,7 @@ export type NewDraftPost = {
   unit: string;
   locationLabel: string;
   imageUrls: string[];
+  contactInfo: PostContactInfo;
 };
 type FirestorePost = Record<string, any>;
 function currentUserId() {
@@ -63,6 +64,7 @@ function mapPost(id: string, row: FirestorePost): MarketplacePost {
     createdAtLabel: createdAt.toLocaleDateString(),
     expiresAt: row.expiresAt ? toIso(row.expiresAt) : undefined,
     contactMethods: ["CALL"],
+    contactInfo: row.contactInfo ?? { phone: row.posterPhone ?? "" },
   };
 }
 
@@ -72,7 +74,6 @@ export async function createDraftPost(input: NewDraftPost) {
   const ref = await addDoc(collection(firestore, "posts"), {
     userId: user.uid,
     posterName: user.displayName ?? "SIGLA member",
-    posterPhone: user.phoneNumber ?? "",
     type: input.type,
     categoryLabel: "Other",
     productName: input.productName.trim(),
@@ -81,6 +82,8 @@ export async function createDraftPost(input: NewDraftPost) {
     unit: input.unit.trim(),
     locationLabel: input.locationLabel.trim(),
     imageUrls: input.imageUrls,
+    contactInfo: input.contactInfo,
+    posterPhone: input.contactInfo.phone,
     priceType: "CONTACT",
     status: "DRAFT",
     createdAt: serverTimestamp(),
@@ -99,6 +102,8 @@ export async function updateDraftPost(id: string, input: NewDraftPost) {
     unit: input.unit.trim(),
     locationLabel: input.locationLabel.trim(),
     imageUrls: input.imageUrls,
+    contactInfo: input.contactInfo,
+    posterPhone: input.contactInfo.phone,
     status: "DRAFT",
     rejectionReason: null,
     updatedAt: serverTimestamp(),

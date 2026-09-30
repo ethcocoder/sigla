@@ -32,7 +32,7 @@ export default function ProfileScreen() {
     {
       icon: "document-text-outline",
       label: t("profile.myPosts"),
-      onPress: () => router.push("/(tabs)/my-posts"),
+      onPress: () => router.push("/(tabs)/my-posts" as never),
     },
     {
       icon: "receipt-outline",
@@ -42,12 +42,12 @@ export default function ProfileScreen() {
     {
       icon: "settings-outline",
       label: t("profile.settings"),
-      onPress: () => router.push("/settings"),
+      onPress: () => router.push("/settings" as never),
     },
     {
       icon: "help-circle-outline",
       label: t("profile.support"),
-      onPress: () => router.push("/support"),
+      onPress: () => router.push("/support" as never),
     },
   ];
   const statusIcon: keyof typeof Ionicons.glyphMap =

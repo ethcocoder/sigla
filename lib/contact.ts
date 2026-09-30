@@ -1,38 +1,18 @@
-import { Alert, Linking, Platform } from "react-native";
-import type { ContactMethod, MarketplacePost } from "@/types/domain";
+import { Alert, Linking } from "react-native";
+import type { MarketplacePost } from "@/types/domain";
 
-const methodLabels: Record<ContactMethod, string> = {
-  CALL: "Call poster",
-  TELEGRAM: "Open Telegram",
-  WHATSAPP: "Open WhatsApp",
-};
-
-function getUrl(method: ContactMethod, post: MarketplacePost): string | null {
-  // Public listings expose contact actions without exposing private phone numbers. Keep the action explicit
-  // until authenticated contact details are supplied by the backend.
-  if (method === "CALL") return null;
-  if (method === "TELEGRAM") return "https://t.me/sigla_support";
-  return "https://wa.me/251915550101";
-}
+function open(url: string) { void Linking.openURL(url).catch(() => Alert.alert("Unable to open", "Please try again or use the contact details shown.")); }
+function link(value: string, base: string) { const clean = value.trim(); if (!clean) return null; return clean.startsWith("http") ? clean : `${base}${clean.replace(/^@/, "")}`; }
 
 export function showContactOptions(post: MarketplacePost) {
-  const methods = post.contactMethods.length ? post.contactMethods : ["CALL" as const];
-  const buttons = methods.map((method) => ({
-    text: methodLabels[method],
-    onPress: () => {
-      const url = getUrl(method, post);
-      if (!url) {
-        Alert.alert("Contact details", "The poster’s phone number is shared after account verification.");
-        return;
-      }
-      void Linking.openURL(url).catch(() => Alert.alert("Unable to open", "Please try again or contact SIGLA support."));
-    },
-  }));
-  buttons.push({ text: "Cancel", onPress: () => undefined });
-  if (Platform.OS === "web") {
-    // Alert is supported by Expo Web and keeps this interaction accessible.
-    Alert.alert(`Contact ${post.poster.name}`, "Choose a contact method.", buttons);
-    return;
-  }
-  Alert.alert(`Contact ${post.poster.name}`, "Choose a contact method.", buttons);
+  const info = post.contactInfo ?? { phone: "" };
+  const summary = [info.phone ? `Mobile: ${info.phone}` : "", info.whatsapp ? `WhatsApp: ${info.whatsapp}` : "", info.telegram ? `Telegram: ${info.telegram}` : "", info.facebook ? `Facebook: ${info.facebook}` : "", info.instagram ? `Instagram: ${info.instagram}` : ""].filter(Boolean).join("\n");
+  const buttons: { text: string; onPress: () => void }[] = [];
+  if (info.phone) buttons.push({ text: "Call mobile", onPress: () => open(`tel:${info.phone}`) });
+  if (info.whatsapp) buttons.push({ text: "Open WhatsApp", onPress: () => open(link(info.whatsapp!, "https://wa.me/")!) });
+  if (info.telegram) buttons.push({ text: "Open Telegram", onPress: () => open(link(info.telegram!, "https://t.me/")!) });
+  if (info.facebook) buttons.push({ text: "Open Facebook", onPress: () => open(link(info.facebook!, "https://facebook.com/")!) });
+  if (info.instagram) buttons.push({ text: "Open Instagram", onPress: () => open(link(info.instagram!, "https://instagram.com/")!) });
+  buttons.push({ text: "Close", onPress: () => undefined });
+  Alert.alert(`Contact ${post.poster.name}`, summary || "The poster did not add contact details.", buttons);
 }

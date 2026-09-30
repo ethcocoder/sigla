@@ -22,6 +22,7 @@ import {
   createDraftPost,
   getPostById,
   markPostPaymentPending,
+  publishAdminPost,
   updateDraftPost,
 } from "@/lib/backend/marketplace";
 import { submitPostPayment } from "@/lib/backend/payments";
@@ -33,7 +34,7 @@ import type { MarketplaceSettings, PostType } from "@/types/domain";
 export default function NewPostScreen() {
   const colors = useColors("light");
   const { t } = useTranslation();
-  const { isAdmin } = useFirebaseAuth();
+  const { isAdmin, profile } = useFirebaseAuth();
   const { type: rawType, id } = useLocalSearchParams<{
     type?: string;
     id?: string;
@@ -47,6 +48,11 @@ export default function NewPostScreen() {
   const [unit, setUnit] = useState("");
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
+  const [telegram, setTelegram] = useState("");
+  const [facebook, setFacebook] = useState("");
+  const [instagram, setInstagram] = useState("");
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [transactionReference, setTransactionReference] = useState("");
   const [imageError, setImageError] = useState<string | null>(null);
@@ -72,6 +78,11 @@ export default function NewPostScreen() {
         setUnit(post.unit);
         setLocation(post.locationLabel);
         setDescription(post.description);
+        setContactPhone(post.contactInfo.phone);
+        setWhatsapp(post.contactInfo.whatsapp ?? "");
+        setTelegram(post.contactInfo.telegram ?? "");
+        setFacebook(post.contactInfo.facebook ?? "");
+        setInstagram(post.contactInfo.instagram ?? "");
         setImageUri(post.imageUrl || null);
       })
       .catch((cause) =>
@@ -90,8 +101,10 @@ export default function NewPostScreen() {
       unit.trim().length >= 1 &&
       location.trim().length >= 2 &&
       description.trim().length >= 10 &&
+      contactPhone.trim().length >= 7 &&
       (isAdmin || transactionReference.trim().length >= 4),
     [
+      contactPhone,
       description,
       isAdmin,
       location,
@@ -133,6 +146,13 @@ export default function NewPostScreen() {
         type,
         productName,
         description,
+        contactInfo: {
+          phone: contactPhone.trim(),
+          whatsapp: whatsapp.trim() || undefined,
+          telegram: telegram.trim() || undefined,
+          facebook: facebook.trim() || undefined,
+          instagram: instagram.trim() || undefined,
+        },
         quantity: Number(quantity),
         unit,
         locationLabel: location,
@@ -141,10 +161,7 @@ export default function NewPostScreen() {
       const postId = id || (await createDraftPost(input));
       if (id) await updateDraftPost(id, input);
       if (isAdmin) {
-        await updateDraftPost(postId, input);
-        const { submitPostForApproval } =
-          await import("@/lib/backend/marketplace");
-        await submitPostForApproval(postId);
+        await publishAdminPost(postId, user.uid);
       } else {
         await submitPostPayment({
           postId,
@@ -186,16 +203,16 @@ export default function NewPostScreen() {
           <Ionicons name="checkmark" size={34} color={colors.primaryDark} />
         </View>
         <Text style={[styles.successTitle, { color: colors.foreground }]}>
-          {isAdmin ? "Listing submitted" : "Payment submitted"}
+          {isAdmin ? "Listing published" : "Payment submitted"}
         </Text>
         <Text style={[styles.successBody, { color: colors.muted }]}>
           {isAdmin
-            ? "Your administrator listing was sent directly for listing review."
+            ? "Your administrator listing is now live in the marketplace."
             : "Your listing and Telebirr transaction number were sent for administrator verification. After payment verification, it will move to listing review."}
         </Text>
         <ActionButton
           label="Open my posts"
-          onPress={() => router.replace("/(tabs)/my-posts")}
+          onPress={() => router.replace("/(tabs)/my-posts" as never)}
         />
       </View>
     );
@@ -297,6 +314,53 @@ export default function NewPostScreen() {
           multiline
           colors={colors}
         />
+        <Text style={[styles.helper, { color: colors.muted }]}>
+          Description must be at least 10 characters.
+        </Text>
+        <Text style={[styles.sectionLabel, { color: colors.foreground }]}>
+          Contact details
+        </Text>
+        <Text style={[styles.helper, { color: colors.muted }]}>
+          Mobile phone is required. Social media contacts are optional and shown
+          when buyers tap Contact.
+        </Text>
+        <Field
+          label="Mobile phone (required)"
+          value={contactPhone}
+          onChangeText={setContactPhone}
+          placeholder="e.g. 0912345678"
+          keyboardType="phone-pad"
+          colors={colors}
+        />
+        <Field
+          label="WhatsApp (optional)"
+          value={whatsapp}
+          onChangeText={setWhatsapp}
+          placeholder="Phone or WhatsApp number"
+          keyboardType="phone-pad"
+          colors={colors}
+        />
+        <Field
+          label="Telegram (optional)"
+          value={telegram}
+          onChangeText={setTelegram}
+          placeholder="@username or Telegram link"
+          colors={colors}
+        />
+        <Field
+          label="Facebook (optional)"
+          value={facebook}
+          onChangeText={setFacebook}
+          placeholder="Profile link"
+          colors={colors}
+        />
+        <Field
+          label="Instagram (optional)"
+          value={instagram}
+          onChangeText={setInstagram}
+          placeholder="@username or profile link"
+          colors={colors}
+        />
         <View style={styles.field}>
           <Text style={[styles.label, { color: colors.foreground }]}>
             Listing image{" "}
@@ -373,45 +437,54 @@ export default function NewPostScreen() {
             </Text>
           ) : null}
         </View>
-        {!isAdmin ? <View
-          style={[styles.paymentBox, { backgroundColor: colors.secondarySoft }]}
-        >
-          <Ionicons
-            name="card-outline"
-            size={22}
-            color={colors.secondaryDark}
-          />
-          <View style={styles.paymentCopy}>
-            <Text
-              style={[styles.paymentTitle, { color: colors.secondaryDark }]}
-            >
-              Telebirr payment
-            </Text>
-            <Text style={[styles.paymentBody, { color: colors.secondaryDark }]}>
-              Send {settings?.postFee?.toLocaleString() ?? "…"} ETB to the
-              administrator before submitting.
-            </Text>
-            <Text
-              style={[styles.paymentValue, { color: colors.secondaryDark }]}
-            >
-              Mobile: {settings?.telebirrNumber || "Not configured yet"}
-            </Text>
-            <Text
-              style={[styles.paymentValue, { color: colors.secondaryDark }]}
-            >
-              Account holder:{" "}
-              {settings?.telebirrAccountName || "Not configured yet"}
-            </Text>
+        {!isAdmin ? (
+          <View
+            style={[
+              styles.paymentBox,
+              { backgroundColor: colors.secondarySoft },
+            ]}
+          >
+            <Ionicons
+              name="card-outline"
+              size={22}
+              color={colors.secondaryDark}
+            />
+            <View style={styles.paymentCopy}>
+              <Text
+                style={[styles.paymentTitle, { color: colors.secondaryDark }]}
+              >
+                Telebirr payment
+              </Text>
+              <Text
+                style={[styles.paymentBody, { color: colors.secondaryDark }]}
+              >
+                Send {settings?.postFee?.toLocaleString() ?? "…"} ETB to the
+                administrator before submitting.
+              </Text>
+              <Text
+                style={[styles.paymentValue, { color: colors.secondaryDark }]}
+              >
+                Mobile: {settings?.telebirrNumber || "Not configured yet"}
+              </Text>
+              <Text
+                style={[styles.paymentValue, { color: colors.secondaryDark }]}
+              >
+                Account holder:{" "}
+                {settings?.telebirrAccountName || "Not configured yet"}
+              </Text>
+            </View>
           </View>
-        </View> : null}
-        {!isAdmin ? <Field
-          label="Telebirr transaction number"
-          value={transactionReference}
-          onChangeText={setTransactionReference}
-          placeholder="e.g. FT123456789"
-          autoCapitalize="characters"
-          colors={colors}
-        /> : null}
+        ) : null}
+        {!isAdmin ? (
+          <Field
+            label="Telebirr transaction number"
+            value={transactionReference}
+            onChangeText={setTransactionReference}
+            placeholder="e.g. FT123456789"
+            autoCapitalize="characters"
+            colors={colors}
+          />
+        ) : null}
         {formError ? (
           <Text style={[styles.formError, { color: colors.error }]}>
             {formError}
@@ -421,9 +494,11 @@ export default function NewPostScreen() {
           label={
             submitting
               ? "Submitting…"
-              : editing
-                ? "Save & submit for approval"
-                : "Submit listing for approval"
+              : isAdmin
+                ? "Publish listing"
+                : editing
+                  ? "Save & submit for approval"
+                  : "Submit listing for approval"
           }
           disabled={!canSubmit || submitting}
           style={({ pressed }) => [
@@ -451,7 +526,7 @@ function Field({
   onChangeText: (value: string) => void;
   placeholder: string;
   multiline?: boolean;
-  keyboardType?: "numeric";
+  keyboardType?: "numeric" | "phone-pad";
   autoCapitalize?: "characters";
   colors: ReturnType<typeof useColors>;
 }) {
@@ -563,6 +638,17 @@ const styles = StyleSheet.create({
   paymentTitle: { ...Typography.heading, fontSize: 16 },
   paymentBody: { ...Typography.caption, lineHeight: 18, marginTop: 5 },
   paymentValue: { ...Typography.body, fontWeight: "700", marginTop: 8 },
+  helper: {
+    ...Typography.caption,
+    lineHeight: 18,
+    marginTop: -Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  sectionLabel: {
+    ...Typography.heading,
+    marginTop: Spacing.sm,
+    marginBottom: Spacing.sm,
+  },
   formError: {
     ...Typography.caption,
     lineHeight: 18,
