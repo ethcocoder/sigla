@@ -16,7 +16,7 @@ import { getSafeErrorMessage } from "@/lib/error-message";
 import { listApprovedPosts } from "@/lib/backend/marketplace";
 import type { MarketplacePost } from "@/types/domain";
 
-const blue = "#2F8BEA";
+const blue = "#4F8B2A";
 const categories = [
   { label: "Fertilizer", icon: "leaf-outline" as const, color: "#A6D94A" },
   { label: "Pesticide", icon: "bug-outline" as const, color: "#F2A65A" },
@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
   },
   thumbImage: { width: "100%", height: "100%" },
   listingCopy: { flex: 1, paddingVertical: 2 },
-  listingTitle: { color: "#1C5EA8", fontSize: 17, fontWeight: "800" },
+  listingTitle: { color: "#4F8B2A", fontSize: 17, fontWeight: "800" },
   listingSeller: { color: "#454B50", fontSize: 13, marginTop: 6 },
   listingMeta: {
     color: "#4C5358",

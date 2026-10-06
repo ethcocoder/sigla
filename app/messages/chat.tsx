@@ -129,7 +129,7 @@ export default function ChatScreen() {
         </View>
       ) : null}
       {loading ? (
-        <ActivityIndicator color="#2F8BEA" style={styles.loader} />
+        <ActivityIndicator color="#4F8B2A" style={styles.loader} />
       ) : (
         <ScrollView
           contentContainerStyle={styles.messages}
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
   bubbleText: { color: "#252A2E", fontSize: 15, lineHeight: 21 },
   mineText: { color: "#315D1D" },
   time: { color: "#8A939A", fontSize: 10, marginTop: 5, textAlign: "right" },
-  mineTime: { color: "#5A8AB5" },
+  mineTime: { color: "#6E9A4C" },
   error: { color: "#B42318", fontSize: 12, textAlign: "center", padding: 8 },
   composer: {
     minHeight: 64,

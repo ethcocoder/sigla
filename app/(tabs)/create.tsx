@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#FFFFFF" },
   topbar: {
     height: 74,
-    backgroundColor: "#2F8BEA",
+    backgroundColor: "#4F8B2A",
     alignItems: "center",
     justifyContent: "flex-end",
     paddingBottom: 15,
@@ -107,12 +107,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  radioActive: { borderColor: "#2F8BEA" },
+  radioActive: { borderColor: "#4F8B2A" },
   radioDot: {
     width: 13,
     height: 13,
     borderRadius: 7,
-    backgroundColor: "#2F8BEA",
+    backgroundColor: "#4F8B2A",
   },
   cityText: { color: "#2C3135", fontSize: 16 },
   next: {
@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
     minWidth: 132,
     minHeight: 48,
     borderRadius: 10,
-    backgroundColor: "#2F8BEA",
+    backgroundColor: "#4F8B2A",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",

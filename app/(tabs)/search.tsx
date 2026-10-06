@@ -41,7 +41,7 @@ export default function WatchlistScreen() {
           </Text>
         }
         {loading ? (
-          <ActivityIndicator color="#2F8BEA" style={styles.loader} />
+          <ActivityIndicator color="#4F8B2A" style={styles.loader} />
         ) : posts.length === 0 ? (
           <View style={styles.empty}>
             <Ionicons name="star-outline" size={40} color="#8C969E" />
@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#FFFFFF" },
   topbar: {
     height: 74,
-    backgroundColor: "#2F8BEA",
+    backgroundColor: "#4F8B2A",
     paddingHorizontal: 18,
     paddingTop: 24,
     flexDirection: "row",
@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   copy: { flex: 1 },
-  name: { color: "#1C5EA8", fontSize: 16, fontWeight: "800" },
+  name: { color: "#4F8B2A", fontSize: 16, fontWeight: "800" },
   meta: { color: "#68727C", fontSize: 12, marginTop: 4 },
   price: { color: "#78A633", fontSize: 13, fontWeight: "800", marginTop: 4 },
 });

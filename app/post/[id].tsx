@@ -32,7 +32,7 @@ export default function PostDetailScreen() {
   if (!post && !error)
     return (
       <View style={styles.center}>
-        <ActivityIndicator color="#2F8BEA" />
+        <ActivityIndicator color="#4F8B2A" />
       </View>
     );
   if (!post)
@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 15 },
   topbar: {
     height: 74,
-    backgroundColor: "#2F8BEA",
+    backgroundColor: "#4F8B2A",
     paddingTop: 24,
     paddingHorizontal: 18,
     flexDirection: "row",
@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
   },
   seen: { color: "#68727C", fontSize: 13 },
   price: {
-    color: "#2F76BD",
+    color: "#4F8B2A",
     fontSize: 27,
     fontWeight: "900",
     paddingHorizontal: 16,
@@ -231,12 +231,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 2,
     borderColor: "#E6D23B",
-    backgroundColor: "#DCEBFF",
+    backgroundColor: "#DDF0C8",
     alignItems: "center",
     justifyContent: "center",
     flexDirection: "row",
     gap: 8,
   },
   actionText: { color: "#1D2226", fontSize: 12, fontWeight: "900" },
-  backText: { color: "#2F8BEA", fontWeight: "800" },
+  backText: { color: "#4F8B2A", fontWeight: "800" },
 });
