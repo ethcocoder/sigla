@@ -23,6 +23,7 @@ export type MarketplaceQuery = {
   limit?: number;
   cursor?: string;
   type?: PostType;
+  categoryId?: string;
 };
 export type NewDraftPost = {
   type: PostType;
@@ -33,6 +34,8 @@ export type NewDraftPost = {
   locationLabel: string;
   imageUrls: string[];
   contactInfo: PostContactInfo;
+  categoryId: string;
+  categoryLabel: string;
 };
 type FirestorePost = Record<string, any>;
 function normalizeContactInfo(input: PostContactInfo): PostContactInfo {
@@ -85,7 +88,8 @@ export async function createDraftPost(input: NewDraftPost) {
     userId: user.uid,
     posterName: user.displayName ?? "SIGLA member",
     type: input.type,
-    categoryLabel: "Other",
+    categoryId: input.categoryId,
+    categoryLabel: input.categoryLabel,
     productName: input.productName.trim(),
     description: input.description.trim(),
     quantity: input.quantity,
@@ -107,6 +111,8 @@ export async function updateDraftPost(id: string, input: NewDraftPost) {
   await updateDoc(doc(firestore, "posts", id), {
     userId,
     type: input.type,
+    categoryId: input.categoryId,
+    categoryLabel: input.categoryLabel,
     productName: input.productName.trim(),
     description: input.description.trim(),
     quantity: input.quantity,
@@ -158,6 +164,7 @@ export async function listApprovedPosts(
   return snapshot.docs
     .map((item) => mapPost(item.id, item.data()))
     .filter((item) => !queryOptions.type || item.type === queryOptions.type)
+    .filter((item) => !queryOptions.categoryId || item.categoryId === queryOptions.categoryId)
     .sort((a, b) => b.createdAtLabel.localeCompare(a.createdAtLabel))
     .slice(0, Math.min(queryOptions.limit ?? 12, 50));
 }

@@ -190,6 +190,7 @@ export async function updateAdminSettings(input: {
   supportTelegram: string;
   requirePostApproval: boolean;
   requireUserApproval: boolean;
+  categories: Array<{ id: string; labelEn: string; labelAm: string; icon: string; color: string; active: boolean }>;
 }) {
   await setDoc(
     doc(firestore, "settings", "platform"),

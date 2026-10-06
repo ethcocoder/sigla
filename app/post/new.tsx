@@ -5,6 +5,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   Pressable,
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
@@ -17,6 +18,7 @@ import { useColors } from "@/hooks/use-colors";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { Radii, Spacing, Typography } from "@/lib/_core/theme";
 import { useTranslation } from "@/lib/i18n-provider";
+import { DEFAULT_CATEGORIES, categoryLabel } from "@/lib/categories";
 import { getPlatformSettings } from "@/lib/backend/settings";
 import {
   createDraftPost,
@@ -33,7 +35,7 @@ import type { MarketplaceSettings, PostType } from "@/types/domain";
 
 export default function NewPostScreen() {
   const colors = useColors("light");
-  const { t } = useTranslation();
+  const { language, t } = useTranslation();
   const { isAdmin, profile } = useFirebaseAuth();
   const { type: rawType, id } = useLocalSearchParams<{
     type?: string;
@@ -43,6 +45,8 @@ export default function NewPostScreen() {
   const [type, setType] = useState<PostType>(
     rawType === "NEED" ? "NEED" : "HAVE",
   );
+  const [categoryId, setCategoryId] = useState("other");
+  const [categoryOpen, setCategoryOpen] = useState(false);
   const [productName, setProductName] = useState("");
   const [quantity, setQuantity] = useState("");
   const [unit, setUnit] = useState("");
@@ -62,6 +66,8 @@ export default function NewPostScreen() {
   const [formError, setFormError] = useState<string | null>(null);
   const [settings, setSettings] = useState<MarketplaceSettings | null>(null);
   const [loadingEdit, setLoadingEdit] = useState(editing);
+  const categories = (settings?.categories ?? DEFAULT_CATEGORIES).filter((item) => item.active || item.id === categoryId);
+  const selectedCategory = categories.find((item) => item.id === categoryId) ?? categories[0] ?? DEFAULT_CATEGORIES[DEFAULT_CATEGORIES.length - 1];
   useEffect(() => {
     void getPlatformSettings()
       .then(setSettings)
@@ -74,6 +80,7 @@ export default function NewPostScreen() {
         if (!post || post.poster.id !== firebaseAuth.currentUser?.uid)
           throw new Error("This listing does not belong to your account.");
         setType(post.type);
+        setCategoryId(post.categoryId || "other");
         setProductName(post.productName);
         setQuantity(String(post.quantity));
         setUnit(post.unit);
@@ -152,6 +159,8 @@ export default function NewPostScreen() {
             : [];
       const input = {
         type,
+        categoryId: selectedCategory.id,
+        categoryLabel: categoryLabel(selectedCategory, language),
         productName,
         description,
         contactInfo: {
@@ -279,6 +288,47 @@ export default function NewPostScreen() {
             <StatusBadge kind="postType" type="NEED" />
           </Pressable>
         </View>
+        <View style={styles.field}>
+          <Text style={[styles.label, { color: colors.foreground }]}>{t("common.category")}</Text>
+          <Text style={[styles.helper, { color: colors.muted }]}>{t("category.helper")}</Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t("category.choose")}
+            onPress={() => setCategoryOpen(true)}
+            style={[styles.categoryPicker, { backgroundColor: colors.surface, borderColor: colors.border }]}
+          >
+            <View style={[styles.categoryPickerIcon, { backgroundColor: selectedCategory.color }]}>
+              <Ionicons name={selectedCategory.icon as keyof typeof Ionicons.glyphMap} size={20} color="#FFFFFF" />
+            </View>
+            <View style={styles.categoryPickerCopy}>
+              <Text style={[styles.categoryPickerTitle, { color: colors.foreground }]}>{categoryLabel(selectedCategory, language)}</Text>
+              <Text style={[styles.categoryPickerMeta, { color: colors.muted }]}>{selectedCategory.labelEn} · {selectedCategory.labelAm}</Text>
+            </View>
+            <Ionicons name="chevron-down" size={20} color={colors.muted} />
+          </Pressable>
+        </View>
+        <Modal visible={categoryOpen} transparent animationType="slide" onRequestClose={() => setCategoryOpen(false)}>
+          <Pressable style={styles.modalBackdrop} onPress={() => setCategoryOpen(false)}>
+            <Pressable style={[styles.categorySheet, { backgroundColor: colors.surface }]} onPress={(event) => event.stopPropagation()}>
+              <View style={styles.sheetHandle} />
+              <Text style={[styles.sheetTitle, { color: colors.foreground }]}>{t("category.choose")}</Text>
+              <Text style={[styles.sheetHelper, { color: colors.muted }]}>{t("category.helper")}</Text>
+              {categories.map((category) => (
+                <Pressable key={category.id} onPress={() => { setCategoryId(category.id); setCategoryOpen(false); }} style={[styles.categoryOption, { borderColor: colors.border }]}>
+                  <View style={[styles.categoryPickerIcon, { backgroundColor: category.color }]}>
+                    <Ionicons name={category.icon as keyof typeof Ionicons.glyphMap} size={19} color="#FFFFFF" />
+                  </View>
+                  <View style={styles.categoryPickerCopy}>
+                    <Text style={[styles.categoryPickerTitle, { color: colors.foreground }]}>{categoryLabel(category, language)}</Text>
+                    <Text style={[styles.categoryPickerMeta, { color: colors.muted }]}>{category.labelEn} · {category.labelAm}</Text>
+                  </View>
+                  {category.id === categoryId ? <Ionicons name="checkmark-circle" size={22} color={colors.primary} /> : null}
+                </Pressable>
+              ))}
+              <ActionButton label={t("common.cancel")} variant="outline" onPress={() => setCategoryOpen(false)} />
+            </Pressable>
+          </Pressable>
+        </Modal>
         <Field
           label="Product or item"
           value={productName}
@@ -609,6 +659,17 @@ const styles = StyleSheet.create({
     padding: Spacing.md,
     alignItems: "center",
   },
+  categoryPicker: { minHeight: 64, borderWidth: 1, borderRadius: Radii.md, padding: Spacing.sm, flexDirection: "row", alignItems: "center", gap: Spacing.sm },
+  categoryPickerIcon: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
+  categoryPickerCopy: { flex: 1 },
+  categoryPickerTitle: { ...Typography.body, fontWeight: "800" },
+  categoryPickerMeta: { ...Typography.caption, marginTop: 2 },
+  modalBackdrop: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(15, 23, 42, 0.48)" },
+  categorySheet: { borderTopLeftRadius: Radii.lg, borderTopRightRadius: Radii.lg, padding: Spacing.xl, paddingBottom: 30, gap: Spacing.sm },
+  sheetHandle: { alignSelf: "center", width: 42, height: 5, borderRadius: 5, backgroundColor: "#CBD5E1", marginBottom: Spacing.sm },
+  sheetTitle: { ...Typography.heading, fontSize: 22 },
+  sheetHelper: { ...Typography.caption, lineHeight: 18, marginBottom: Spacing.sm },
+  categoryOption: { minHeight: 58, borderWidth: 1, borderRadius: Radii.md, padding: Spacing.sm, flexDirection: "row", alignItems: "center", gap: Spacing.sm },
   field: { marginBottom: Spacing.lg },
   row: { flexDirection: "row", gap: Spacing.md },
   half: { flex: 1 },

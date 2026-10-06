@@ -19,6 +19,7 @@ export type PaymentType = "REGISTRATION" | "POST";
 export type PaymentStatus = "PENDING" | "VERIFIED" | "REJECTED";
 export type PriceType = "FIXED" | "NEGOTIABLE" | "CONTACT";
 export type ContactMethod = "CALL" | "TELEGRAM" | "WHATSAPP";
+export type { MarketplaceCategory } from "@/lib/categories";
 
 export interface UserProfile {
   id: string;
@@ -86,6 +87,7 @@ export interface MarketplaceSettings {
   allowNewRegistrations: boolean;
   requirePostApproval: boolean;
   requireUserApproval: boolean;
+  categories: import("@/lib/categories").MarketplaceCategory[];
   supportPhone?: string;
   supportTelegram?: string;
 }

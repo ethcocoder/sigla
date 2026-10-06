@@ -1,7 +1,9 @@
 import { getApp, getApps, initializeApp } from "firebase/app";
 import { collection, doc, getFirestore, setDoc, serverTimestamp } from "firebase/firestore";
-import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, createUserWithEmailAndPassword, signOut, updateProfile, type User } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithCredential, signInWithEmailAndPassword, signInWithPopup, createUserWithEmailAndPassword, signOut, updateProfile, type User } from "firebase/auth";
 import { Platform } from "react-native";
+import { Capacitor } from "@capacitor/core";
+import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
 
 export const firebaseConfig = { apiKey: "AIzaSyCGADNHj1xiQ1sYRSkSK9ejojfR1KKI3tI", authDomain: "sigla-1e1cf.firebaseapp.com", projectId: "sigla-1e1cf", messagingSenderId: "659363204170", appId: "1:659363204170:web:8cdd9ff8a69b95e934eab3", measurementId: "G-HC1DGFEMDL" };
 export const firebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
@@ -20,4 +22,19 @@ export async function signUpWithEmail(email: string, password: string, name: str
   return credential;
 }
 
-export async function signInWithGoogle() { if (Platform.OS === "web") return signInWithPopup(firebaseAuth, googleProvider); return signInWithRedirect(firebaseAuth, googleProvider); }
+export async function signInWithGoogle() {
+  if (Platform.OS === "web" || !Capacitor.isNativePlatform()) {
+    return signInWithPopup(firebaseAuth, googleProvider);
+  }
+
+  // Android uses Credential Manager and Google Play services instead of opening Chrome.
+  // The native ID token is exchanged for a Firebase JS SDK credential so the rest of
+  // the existing app (Firestore, profile loading, and auth listeners) stays unchanged.
+  const nativeResult = await FirebaseAuthentication.signInWithGoogle({
+    skipNativeAuth: true,
+    useCredentialManager: true,
+  });
+  const idToken = nativeResult.credential?.idToken;
+  if (!idToken) throw new Error("Google did not return a native ID token.");
+  return signInWithCredential(firebaseAuth, GoogleAuthProvider.credential(idToken));
+}

@@ -14,20 +14,17 @@ import { Image } from "expo-image";
 import { useColors } from "@/hooks/use-colors";
 import { getSafeErrorMessage } from "@/lib/error-message";
 import { listApprovedPosts } from "@/lib/backend/marketplace";
+import { getPlatformSettings } from "@/lib/backend/settings";
+import { DEFAULT_CATEGORIES, categoryLabel } from "@/lib/categories";
+import { useTranslation } from "@/lib/i18n-provider";
 import type { MarketplacePost } from "@/types/domain";
 
 const blue = "#4F8B2A";
-const categories = [
-  { label: "Fertilizer", icon: "leaf-outline" as const, color: "#A6D94A" },
-  { label: "Pesticide", icon: "bug-outline" as const, color: "#F2A65A" },
-  { label: "Herbicide", icon: "flask-outline" as const, color: "#65C9C9" },
-  { label: "Seeds", icon: "nutrition-outline" as const, color: "#F4D35E" },
-  { label: "Equipment", icon: "construct-outline" as const, color: "#B48AE8" },
-];
-
 export default function HomeScreen() {
   const colors = useColors("light");
+  const { language, t } = useTranslation();
   const [posts, setPosts] = useState<MarketplacePost[]>([]);
+  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,7 +32,9 @@ export default function HomeScreen() {
     setRefreshing(true);
     try {
       setError(null);
-      setPosts(await listApprovedPosts({ limit: 30 }));
+      const [nextPosts, settings] = await Promise.all([listApprovedPosts({ limit: 30 }), getPlatformSettings()]);
+      setPosts(nextPosts);
+      setCategories(settings.categories.filter((item) => item.active));
     } catch (cause) {
       setError(getSafeErrorMessage(cause, "network"));
     } finally {
@@ -88,8 +87,8 @@ export default function HomeScreen() {
         >
           {categories.map((category) => (
             <Pressable
-              key={category.label}
-              onPress={() => router.push("/(tabs)/search")}
+              key={category.id}
+              onPress={() => router.push({ pathname: "/(tabs)/search", params: { categoryId: category.id } })}
               style={styles.category}
             >
               <View
@@ -98,14 +97,14 @@ export default function HomeScreen() {
                   { backgroundColor: category.color },
                 ]}
               >
-                <Ionicons name={category.icon} size={22} color="#FFFFFF" />
+                <Ionicons name={category.icon as keyof typeof Ionicons.glyphMap} size={22} color="#FFFFFF" />
               </View>
-              <Text style={styles.categoryLabel}>{category.label}</Text>
+              <Text style={styles.categoryLabel}>{categoryLabel(category, language)}</Text>
             </Pressable>
           ))}
         </ScrollView>
         <View style={styles.feedHeader}>
-          <Text style={styles.feedTitle}>Agricultural supplies near you</Text>
+          <Text style={styles.feedTitle}>{t("category.title")}</Text>
           <Pressable onPress={() => router.push("/(tabs)/search")}>
             <Ionicons name="swap-vertical" size={22} color="#68727C" />
           </Pressable>
@@ -118,9 +117,9 @@ export default function HomeScreen() {
         ) : posts.length === 0 ? (
           <View style={styles.empty}>
             <Ionicons name="leaf-outline" size={32} color="#8DAA39" />
-            <Text style={styles.emptyTitle}>No supplies posted yet</Text>
+            <Text style={styles.emptyTitle}>{t("home.emptyTitle")}</Text>
             <Text style={styles.emptyBody}>
-              Be the first farmer or supplier to post a product.
+              {t("home.emptyBody")}
             </Text>
           </View>
         ) : (

@@ -2,6 +2,7 @@ import { Ionicons } from "@/components/ionicons";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -26,9 +27,12 @@ import {
   type AdminPostRow,
 } from "@/lib/backend/admin";
 import { Radii, Spacing, Typography } from "@/lib/_core/theme";
+import { DEFAULT_CATEGORIES, normalizeCategories, type MarketplaceCategory } from "@/lib/categories";
+import { useTranslation } from "@/lib/i18n-provider";
 
 export default function AdminScreen() {
   const colors = useColors("light");
+  const { language, t } = useTranslation();
   const { session, isAdmin, loading, profileLoading } = useFirebaseAuth();
   const [posts, setPosts] = useState<AdminPostRow[]>([]);
   const [payments, setPayments] = useState<AdminPaymentRow[]>([]);
@@ -42,6 +46,9 @@ export default function AdminScreen() {
     requirePostApproval: true,
     requireUserApproval: true,
   });
+  const [categories, setCategories] = useState<MarketplaceCategory[]>(DEFAULT_CATEGORIES);
+  const [newCategoryEn, setNewCategoryEn] = useState("");
+  const [newCategoryAm, setNewCategoryAm] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [loadingData, setLoadingData] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -76,6 +83,7 @@ export default function AdminScreen() {
           requirePostApproval: nextSettings.requirePostApproval ?? nextSettings.require_post_approval ?? true,
           requireUserApproval: nextSettings.requireUserApproval ?? nextSettings.require_user_approval ?? true,
         });
+        setCategories(normalizeCategories(nextSettings.categories));
       } catch (cause) {
         setError(
           cause instanceof Error ? cause.message : "Unable to load admin data.",
@@ -173,6 +181,7 @@ export default function AdminScreen() {
         supportTelegram: settings.supportTelegram,
         requirePostApproval: settings.requirePostApproval,
         requireUserApproval: settings.requireUserApproval,
+        categories,
       });
       setMessage(
         "Platform settings saved. New registrations will see the updated Telebirr details immediately.",
@@ -461,6 +470,50 @@ export default function AdminScreen() {
               }
               colors={colors}
             />
+            <Text style={[styles.categorySectionTitle, { color: colors.foreground }]}>
+              {t("admin.categories")}
+            </Text>
+            <Text style={[styles.categoryHelper, { color: colors.muted }]}>
+              {t("admin.categoriesHelp")}
+            </Text>
+            {categories.map((category) => (
+              <View key={category.id} style={[styles.categoryRow, { borderColor: colors.border }]}>
+                <View style={styles.categoryCopy}>
+                  <Text style={[styles.categoryName, { color: colors.foreground }]}>
+                    {language === "am" ? category.labelAm : category.labelEn}
+                  </Text>
+                  <Text style={[styles.categoryMeta, { color: colors.muted }]}>
+                    {category.labelEn} · {category.labelAm}
+                  </Text>
+                </View>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => setCategories((items) => items.map((item) => item.id === category.id ? { ...item, active: !item.active } : item))}
+                  style={[styles.categoryAction, { backgroundColor: category.active ? colors.primarySoft : colors.secondarySoft }]}
+                >
+                  <Text style={[styles.categoryActionText, { color: category.active ? colors.primaryDark : colors.secondaryDark }]}>
+                    {category.active ? t("admin.active") : t("admin.hidden")}
+                  </Text>
+                </Pressable>
+              </View>
+            ))}
+            <View style={styles.categoryAddBox}>
+              <Field label={t("admin.categoryEnglish")} value={newCategoryEn} onChangeText={setNewCategoryEn} placeholder="Tools" colors={colors} />
+              <Field label={t("admin.categoryAmharic")} value={newCategoryAm} onChangeText={setNewCategoryAm} placeholder="መሳሪያዎች" colors={colors} />
+              <ActionButton
+                label={t("admin.addCategory")}
+                compact
+                variant="outline"
+                disabled={!newCategoryEn.trim() || !newCategoryAm.trim()}
+                onPress={() => {
+                  const baseId = newCategoryEn.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || `category-${Date.now()}`;
+                  const id = categories.some((item) => item.id === baseId) ? `${baseId}-${Date.now()}` : baseId;
+                  setCategories((items) => [...items, { id, labelEn: newCategoryEn.trim(), labelAm: newCategoryAm.trim(), icon: "grid-outline", color: "#9FB3C8", active: true }]);
+                  setNewCategoryEn("");
+                  setNewCategoryAm("");
+                }}
+              />
+            </View>
             <Toggle
               label="Require listing approval"
               value={settings.requirePostApproval}
@@ -563,12 +616,14 @@ function Field({
   label,
   value,
   onChangeText,
+  placeholder,
   keyboardType,
   colors,
 }: {
   label: string;
   value: string;
   onChangeText: (value: string) => void;
+  placeholder?: string;
   keyboardType?: "numeric" | "phone-pad";
   colors: ReturnType<typeof useColors>;
 }) {
@@ -578,6 +633,7 @@ function Field({
       <TextInput
         value={value}
         onChangeText={onChangeText}
+        placeholder={placeholder}
         keyboardType={keyboardType}
         placeholderTextColor={colors.muted}
         style={[
@@ -685,6 +741,15 @@ const styles = StyleSheet.create({
   statLabel: { ...Typography.caption, marginTop: 3 },
   section: { marginTop: Spacing.xl },
   sectionTitle: { ...Typography.heading, marginBottom: Spacing.md },
+  categorySectionTitle: { ...Typography.heading, fontSize: 17, marginTop: Spacing.md },
+  categoryHelper: { ...Typography.caption, lineHeight: 18, marginTop: 4, marginBottom: Spacing.sm },
+  categoryRow: { flexDirection: "row", alignItems: "center", gap: Spacing.sm, borderWidth: 1, borderRadius: Radii.md, padding: Spacing.sm, marginBottom: Spacing.sm },
+  categoryCopy: { flex: 1 },
+  categoryName: { ...Typography.body, fontWeight: "800" },
+  categoryMeta: { ...Typography.caption, marginTop: 2 },
+  categoryAction: { borderRadius: Radii.pill, paddingHorizontal: Spacing.sm, paddingVertical: 7 },
+  categoryActionText: { ...Typography.caption, fontWeight: "800" },
+  categoryAddBox: { marginTop: Spacing.sm, padding: Spacing.md, borderRadius: Radii.md, backgroundColor: "rgba(148, 163, 184, 0.08)" },
   card: {
     borderWidth: 1,
     borderRadius: Radii.md,

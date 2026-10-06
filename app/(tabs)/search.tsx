@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -11,17 +11,20 @@ import {
 import { Ionicons } from "@/components/ionicons";
 import { listApprovedPosts } from "@/lib/backend/marketplace";
 import type { MarketplacePost } from "@/types/domain";
+import { useTranslation } from "@/lib/i18n-provider";
 
 export default function WatchlistScreen() {
+  const { t } = useTranslation();
+  const { categoryId } = useLocalSearchParams<{ categoryId?: string }>();
   const [posts, setPosts] = useState<MarketplacePost[]>([]);
   const [loading, setLoading] = useState(true);
   const load = useCallback(async () => {
     try {
-      setPosts(await listApprovedPosts({ limit: 12 }));
+      setPosts(await listApprovedPosts({ limit: 12, categoryId: typeof categoryId === "string" ? categoryId : undefined }));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [categoryId]);
   useEffect(() => {
     void load();
   }, [load]);
@@ -31,13 +34,13 @@ export default function WatchlistScreen() {
         <Pressable onPress={() => router.push("/(tabs)")}>
           <Ionicons name="arrow-back" size={23} color="#FFFFFF" />
         </Pressable>
-        <Text style={styles.topbarTitle}>WATCHLIST</Text>
+        <Text style={styles.topbarTitle}>{categoryId ? t("category.title") : t("nav.search")}</Text>
         <View style={{ width: 23 }} />
       </View>
       <ScrollView contentContainerStyle={styles.content}>
         {
           <Text style={styles.subtitle}>
-            Save agricultural products you want to compare or contact later.
+            {categoryId ? t("category.helper") : t("search.placeholder")}
           </Text>
         }
         {loading ? (
@@ -45,7 +48,7 @@ export default function WatchlistScreen() {
         ) : posts.length === 0 ? (
           <View style={styles.empty}>
             <Ionicons name="star-outline" size={40} color="#8C969E" />
-            <Text style={styles.emptyTitle}>Your watchlist is empty</Text>
+            <Text style={styles.emptyTitle}>{t("category.empty")}</Text>
             <Text style={styles.emptyBody}>
               Tap the star on a supply listing to keep it here.
             </Text>
