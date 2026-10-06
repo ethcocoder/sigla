@@ -14,7 +14,6 @@ import { Image } from "expo-image";
 import { useColors } from "@/hooks/use-colors";
 import { getSafeErrorMessage } from "@/lib/error-message";
 import { listApprovedPosts } from "@/lib/backend/marketplace";
-import { showContactOptions } from "@/lib/contact";
 import type { MarketplacePost } from "@/types/domain";
 
 const blue = "#2F8BEA";
@@ -127,7 +126,17 @@ export default function HomeScreen() {
               onPress={() =>
                 router.push({ pathname: "/post/[id]", params: { id: post.id } })
               }
-              onContact={() => showContactOptions(post)}
+              onMessage={() =>
+                router.push({
+                  pathname: "/messages/chat" as never,
+                  params: {
+                    otherUserId: post.poster.id,
+                    otherName: post.poster.name,
+                    listingId: post.id,
+                    listingName: post.productName,
+                  },
+                })
+              }
             />
           ))
         )}
@@ -139,11 +148,11 @@ export default function HomeScreen() {
 function CompactListing({
   post,
   onPress,
-  onContact,
+  onMessage,
 }: {
   post: MarketplacePost;
   onPress: () => void;
-  onContact: () => void;
+  onMessage: () => void;
 }) {
   const price =
     post.priceType === "FIXED" && post.price != null
@@ -179,7 +188,7 @@ function CompactListing({
           <Text style={styles.listingPrice}>{price}</Text>
         </View>
       </Pressable>
-      <Pressable onPress={onContact} style={styles.messageButton}>
+      <Pressable onPress={onMessage} style={styles.messageButton}>
         <Ionicons name="chatbox-ellipses-outline" size={20} color={blue} />
       </Pressable>
     </View>

@@ -123,7 +123,7 @@ export default function ChatScreen() {
       </View>
       {params.listingName ? (
         <View style={styles.listingBar}>
-          <Ionicons name="pricetag-outline" size={17} color="#2F76BD" />
+          <Ionicons name="pricetag-outline" size={17} color="#4F8B2A" />
           <Text style={styles.listingText} numberOfLines={1}>
             {params.listingName}
           </Text>
@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#F4F5F6" },
   topbar: {
     minHeight: 74,
-    backgroundColor: "#2F8BEA",
+    backgroundColor: "#4F8B2A",
     paddingTop: 24,
     paddingHorizontal: 16,
     flexDirection: "row",
@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
   },
   topbarCopy: { flex: 1 },
   topbarTitle: { color: "#FFFFFF", fontSize: 17, fontWeight: "900" },
-  online: { color: "#DCEEFF", fontSize: 11, marginTop: 3 },
+  online: { color: "#E6F3D8", fontSize: 11, marginTop: 3 },
   listingBar: {
     minHeight: 42,
     backgroundColor: "#FFFFFF",
@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
   },
-  listingText: { color: "#2F76BD", fontSize: 13, fontWeight: "800", flex: 1 },
+  listingText: { color: "#4F8B2A", fontSize: 13, fontWeight: "800", flex: 1 },
   loader: { marginTop: 35 },
   messages: {
     padding: 15,
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
   },
   mine: {
     alignSelf: "flex-end",
-    backgroundColor: "#DCEBFF",
+    backgroundColor: "#DDF0C8",
     borderBottomRightRadius: 5,
   },
   theirs: {
@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 5,
   },
   bubbleText: { color: "#252A2E", fontSize: 15, lineHeight: 21 },
-  mineText: { color: "#174D81" },
+  mineText: { color: "#315D1D" },
   time: { color: "#8A939A", fontSize: 10, marginTop: 5, textAlign: "right" },
   mineTime: { color: "#5A8AB5" },
   error: { color: "#B42318", fontSize: 12, textAlign: "center", padding: 8 },
@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "#2F8BEA",
+    backgroundColor: "#4F8B2A",
     alignItems: "center",
     justifyContent: "center",
   },

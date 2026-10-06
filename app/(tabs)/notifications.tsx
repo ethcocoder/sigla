@@ -50,7 +50,7 @@ export default function MessagesScreen() {
         refreshControl={undefined}
       >
         {loading ? (
-          <ActivityIndicator color="#2F8BEA" style={styles.loader} />
+          <ActivityIndicator color="#4F8B2A" style={styles.loader} />
         ) : error ? (
           <Text style={styles.error}>{error}</Text>
         ) : items.length === 0 ? (
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#FFFFFF" },
   topbar: {
     height: 74,
-    backgroundColor: "#2F8BEA",
+    backgroundColor: "#4F8B2A",
     paddingTop: 24,
     paddingHorizontal: 18,
     flexDirection: "row",
@@ -147,15 +147,15 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: "#D9F0FF",
+    backgroundColor: "#E6F3D8",
     alignItems: "center",
     justifyContent: "center",
   },
-  avatarText: { color: "#2F76BD", fontSize: 19, fontWeight: "900" },
+  avatarText: { color: "#4F8B2A", fontSize: 19, fontWeight: "900" },
   copy: { flex: 1 },
   header: { flexDirection: "row", justifyContent: "space-between", gap: 8 },
   title: { color: "#24282C", fontSize: 15, fontWeight: "800", flex: 1 },
   time: { color: "#8A939A", fontSize: 11 },
-  listing: { color: "#2F76BD", fontSize: 12, fontWeight: "700", marginTop: 4 },
+  listing: { color: "#4F8B2A", fontSize: 12, fontWeight: "700", marginTop: 4 },
   body: { color: "#68727C", fontSize: 13, lineHeight: 18, marginTop: 4 },
 });
