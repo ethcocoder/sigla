@@ -1,22 +1,33 @@
 import { Ionicons } from "@/components/ionicons";
 import { router } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
-
-import { BrandLockup } from "@/components/brand-lockup";
-import { MarketplaceCard } from "@/components/marketplace-card";
-import { SectionTitle } from "@/components/section-title";
+import {
+  ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { Image } from "expo-image";
 import { useColors } from "@/hooks/use-colors";
-import { Radii, Spacing, Typography } from "@/lib/_core/theme";
 import { getSafeErrorMessage } from "@/lib/error-message";
-import { useTranslation } from "@/lib/i18n-provider";
 import { listApprovedPosts } from "@/lib/backend/marketplace";
 import { showContactOptions } from "@/lib/contact";
 import type { MarketplacePost } from "@/types/domain";
 
+const blue = "#2F8BEA";
+const categories = [
+  { label: "Fertilizer", icon: "leaf-outline" as const, color: "#A6D94A" },
+  { label: "Pesticide", icon: "bug-outline" as const, color: "#F2A65A" },
+  { label: "Herbicide", icon: "flask-outline" as const, color: "#65C9C9" },
+  { label: "Seeds", icon: "nutrition-outline" as const, color: "#F4D35E" },
+  { label: "Equipment", icon: "construct-outline" as const, color: "#B48AE8" },
+];
+
 export default function HomeScreen() {
   const colors = useColors("light");
-  const { t } = useTranslation();
   const [posts, setPosts] = useState<MarketplacePost[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,56 +36,248 @@ export default function HomeScreen() {
     setRefreshing(true);
     try {
       setError(null);
-      setPosts(await listApprovedPosts({ limit: 12 }));
+      setPosts(await listApprovedPosts({ limit: 30 }));
     } catch (cause) {
       setError(getSafeErrorMessage(cause, "network"));
     } finally {
       setRefreshing(false);
     }
   }, []);
-
   useEffect(() => {
-    const timer = setTimeout(() => { void load(); }, 0);
+    const timer = setTimeout(() => void load(), 0);
     return () => clearTimeout(timer);
   }, [load]);
 
   return (
-    <View style={[styles.root, { backgroundColor: colors.background }]}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void load()} tintColor={colors.primary} />}>
-        <View style={styles.header}><BrandLockup /><Pressable onPress={() => router.push("/(tabs)/notifications")} accessibilityRole="button" accessibilityLabel={t("nav.notifications")} style={[styles.bell, { backgroundColor: colors.surface, borderColor: colors.border }]}><Ionicons name="notifications-outline" size={21} color={colors.foreground} /><View style={[styles.notificationDot, { backgroundColor: colors.primary }]} /></Pressable></View>
-        <View style={[styles.hero, { backgroundColor: colors.primaryDark }]}>
-          <View style={styles.heroCopy}><Text style={styles.eyebrow}>{t("brand.marketplace").toUpperCase()}</Text><Text style={styles.heroTitle}>{t("home.title")}</Text><Text style={styles.heroSubtitle}>{t("home.subtitle")}</Text></View>
-          <View style={styles.heroMark}><Ionicons name="leaf" size={84} color="rgba(255,255,255,.18)" /></View>
-
+    <View style={styles.root}>
+      <View style={styles.topbar}>
+        <Pressable style={styles.location} accessibilityRole="button">
+          <Ionicons name="location" size={21} color="#FFFFFF" />
+          <Text style={styles.locationText}>Addis Ababa</Text>
+        </Pressable>
+        <View style={styles.toolbar}>
+          <Pressable onPress={() => router.push("/(tabs)/search")}>
+            <Ionicons name="search" size={23} color="#FFFFFF" />
+          </Pressable>
+          <Pressable onPress={() => router.push("/(tabs)/search")}>
+            <Ionicons name="funnel" size={21} color="#FFFFFF" />
+          </Pressable>
+          <Pressable onPress={() => router.push("/(tabs)/profile")}>
+            <Ionicons name="person-circle-outline" size={24} color="#FFFFFF" />
+          </Pressable>
         </View>
-        <SectionTitle title={t("home.latest")} actionLabel={t("home.seeAll")} onAction={() => router.push("/search")} />
-        {error ? <View style={[styles.errorBox, { backgroundColor: "#FEF2F2", borderColor: "#FECACA" }]}><Text style={[styles.errorText, { color: colors.error }]}>{error}</Text></View> : null}
-        {refreshing && posts.length === 0 ? <ActivityIndicator color={colors.primary} style={styles.loader} /> : posts.length === 0 ? <View style={[styles.empty, { backgroundColor: colors.surface, borderColor: colors.border }]}><Text style={[styles.emptyTitle, { color: colors.foreground }]}>{t("home.emptyTitle")}</Text><Text style={[styles.emptyBody, { color: colors.muted }]}>{t("home.emptyBody")}</Text></View> : posts.map((post) => <MarketplaceCard key={post.id} post={post} onPress={() => router.push({ pathname: "/post/[id]", params: { id: post.id } })} onContact={() => showContactOptions(post)} />)}
+      </View>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => void load()}
+            tintColor={blue}
+          />
+        }
+      >
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categories}
+        >
+          {categories.map((category) => (
+            <Pressable
+              key={category.label}
+              onPress={() => router.push("/(tabs)/search")}
+              style={styles.category}
+            >
+              <View
+                style={[
+                  styles.categoryIcon,
+                  { backgroundColor: category.color },
+                ]}
+              >
+                <Ionicons name={category.icon} size={22} color="#FFFFFF" />
+              </View>
+              <Text style={styles.categoryLabel}>{category.label}</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+        <View style={styles.feedHeader}>
+          <Text style={styles.feedTitle}>Agricultural supplies near you</Text>
+          <Pressable onPress={() => router.push("/(tabs)/search")}>
+            <Ionicons name="swap-vertical" size={22} color="#68727C" />
+          </Pressable>
+        </View>
+        {error ? (
+          <Text style={[styles.error, { color: colors.error }]}>{error}</Text>
+        ) : null}
+        {refreshing && posts.length === 0 ? (
+          <ActivityIndicator color={blue} style={styles.loader} />
+        ) : posts.length === 0 ? (
+          <View style={styles.empty}>
+            <Ionicons name="leaf-outline" size={32} color="#8DAA39" />
+            <Text style={styles.emptyTitle}>No supplies posted yet</Text>
+            <Text style={styles.emptyBody}>
+              Be the first farmer or supplier to post a product.
+            </Text>
+          </View>
+        ) : (
+          posts.map((post) => (
+            <CompactListing
+              key={post.id}
+              post={post}
+              onPress={() =>
+                router.push({ pathname: "/post/[id]", params: { id: post.id } })
+              }
+              onContact={() => showContactOptions(post)}
+            />
+          ))
+        )}
       </ScrollView>
     </View>
   );
 }
 
+function CompactListing({
+  post,
+  onPress,
+  onContact,
+}: {
+  post: MarketplacePost;
+  onPress: () => void;
+  onContact: () => void;
+}) {
+  const price =
+    post.priceType === "FIXED" && post.price != null
+      ? `${post.price.toLocaleString()} Birr`
+      : post.priceType === "NEGOTIABLE"
+        ? "Negotiable"
+        : "Contact seller";
+  return (
+    <View style={styles.listing}>
+      <Pressable onPress={onPress} style={styles.listingMain}>
+        <View style={styles.thumb}>
+          {post.imageUrl ? (
+            <Image
+              source={{ uri: post.imageUrl }}
+              style={styles.thumbImage}
+              contentFit="cover"
+            />
+          ) : (
+            <Ionicons name="image-outline" size={28} color="#9AA3AB" />
+          )}
+        </View>
+        <View style={styles.listingCopy}>
+          <Text style={styles.listingTitle} numberOfLines={1}>
+            {post.productName}
+          </Text>
+          <Text style={styles.listingSeller} numberOfLines={1}>
+            {post.poster.name} · {post.locationLabel}
+          </Text>
+          <Text style={styles.listingMeta}>
+            {post.type === "HAVE" ? "AVAILABLE" : "WANTED"} · {post.quantity}{" "}
+            {post.unit}
+          </Text>
+          <Text style={styles.listingPrice}>{price}</Text>
+        </View>
+      </Pressable>
+      <Pressable onPress={onContact} style={styles.messageButton}>
+        <Ionicons name="chatbox-ellipses-outline" size={20} color={blue} />
+      </Pressable>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  root: { flex: 1 },
-  content: { paddingHorizontal: Spacing.page, paddingTop: Spacing.lg, paddingBottom: 32, maxWidth: 720, width: "100%", alignSelf: "center" },
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: Spacing.xl },
-  bell: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, alignItems: "center", justifyContent: "center" },
-  notificationDot: { position: "absolute", width: 8, height: 8, borderRadius: 4, right: 9, top: 8, borderWidth: 1.5, borderColor: "#FFFFFF" },
-  hero: { minHeight: 224, borderRadius: Radii.lg, padding: Spacing.xl, marginBottom: Spacing.xxl, overflow: "hidden", position: "relative" },
-  heroCopy: { maxWidth: "78%", zIndex: 1 },
-  eyebrow: { ...Typography.label, color: "#BBF7D0", letterSpacing: 1.2 },
-  heroTitle: { ...Typography.display, color: "#FFFFFF", fontSize: 28, lineHeight: 33, marginTop: Spacing.sm },
-  heroSubtitle: { ...Typography.body, color: "#DCFCE7", marginTop: Spacing.sm, lineHeight: 21 },
-  heroMark: { position: "absolute", right: -4, top: 6, transform: [{ rotate: "-18deg" }] },
-  heroFooter: { position: "absolute", bottom: Spacing.xl, left: Spacing.xl, right: Spacing.xl, flexDirection: "row", alignItems: "center", gap: Spacing.lg },
-  heroStat: { color: "#FFFFFF", fontWeight: "800", fontSize: 16 },
-  heroStatLabel: { color: "#BBF7D0", fontSize: 11, marginTop: 2 },
-  heroDivider: { width: 1, height: 28, backgroundColor: "rgba(255,255,255,.25)" },
-  errorBox: { borderWidth: 1, borderRadius: Radii.md, padding: Spacing.md, marginBottom: Spacing.md },
-  errorText: { ...Typography.caption, lineHeight: 18 },
-  loader: { marginVertical: Spacing.xxl },
-  empty: { borderRadius: Radii.lg, borderWidth: 1, padding: Spacing.xxl, alignItems: "center" },
-  emptyTitle: { ...Typography.heading },
-  emptyBody: { ...Typography.body, color: "#64748B", textAlign: "center", marginTop: Spacing.sm },
+  root: { flex: 1, backgroundColor: "#FFFFFF" },
+  topbar: {
+    height: 74,
+    backgroundColor: blue,
+    paddingHorizontal: 18,
+    paddingTop: 24,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  location: { flexDirection: "row", alignItems: "center", gap: 7 },
+  locationText: { color: "#FFE45B", fontSize: 16, fontWeight: "900" },
+  toolbar: { flexDirection: "row", gap: 21, alignItems: "center" },
+  categories: {
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    gap: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: "#DFE3E7",
+  },
+  category: { alignItems: "center", width: 64 },
+  categoryIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  categoryLabel: {
+    color: "#25292D",
+    fontSize: 11,
+    fontWeight: "700",
+    marginTop: 5,
+    textAlign: "center",
+  },
+  feedHeader: {
+    minHeight: 54,
+    paddingHorizontal: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: "#DFE3E7",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  feedTitle: { color: "#1B5E20", fontSize: 17, fontWeight: "900" },
+  error: { padding: 18, fontSize: 13 },
+  loader: { marginVertical: 35 },
+  listing: {
+    minHeight: 128,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E1E4E7",
+    padding: 13,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  listingMain: { flex: 1, flexDirection: "row", gap: 12 },
+  thumb: {
+    width: 92,
+    height: 98,
+    backgroundColor: "#F0F2F3",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  thumbImage: { width: "100%", height: "100%" },
+  listingCopy: { flex: 1, paddingVertical: 2 },
+  listingTitle: { color: "#1C5EA8", fontSize: 17, fontWeight: "800" },
+  listingSeller: { color: "#454B50", fontSize: 13, marginTop: 6 },
+  listingMeta: {
+    color: "#4C5358",
+    fontSize: 12,
+    fontWeight: "700",
+    marginTop: 7,
+  },
+  listingPrice: {
+    color: "#79A632",
+    fontSize: 14,
+    fontWeight: "800",
+    marginTop: 6,
+  },
+  messageButton: {
+    width: 38,
+    height: 38,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  empty: { alignItems: "center", padding: 42 },
+  emptyTitle: { color: "#222", fontSize: 18, fontWeight: "800", marginTop: 10 },
+  emptyBody: {
+    color: "#68727C",
+    textAlign: "center",
+    marginTop: 6,
+    lineHeight: 20,
+  },
 });

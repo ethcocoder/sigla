@@ -1,56 +1,132 @@
-import { Ionicons } from "@/components/ionicons";
 import { router } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
-
-import { EmptyState } from "@/components/empty-state";
-import { FilterChip } from "@/components/filter-chip";
-import { MarketplaceCard } from "@/components/marketplace-card";
-import { useColors } from "@/hooks/use-colors";
-import { Radii, Spacing, Typography } from "@/lib/_core/theme";
-import { getSafeErrorMessage } from "@/lib/error-message";
-import { useTranslation } from "@/lib/i18n-provider";
+import { useCallback, useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { Ionicons } from "@/components/ionicons";
 import { listApprovedPosts } from "@/lib/backend/marketplace";
-import type { MarketplacePost, PostType } from "@/types/domain";
+import type { MarketplacePost } from "@/types/domain";
 
-export default function SearchScreen() {
-  const colors = useColors("light");
-  const { t } = useTranslation();
-  const [query, setQuery] = useState("");
-  const [type, setType] = useState<PostType | "ALL">("ALL");
+export default function WatchlistScreen() {
   const [posts, setPosts] = useState<MarketplacePost[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const load = useCallback(async () => {
-    setLoading(true);
-    try { setError(null); setPosts(await listApprovedPosts({ type: type === "ALL" ? undefined : type, limit: 30 })); }
-    catch (cause) { setError(getSafeErrorMessage(cause, "network")); }
-    finally { setLoading(false); }
-  }, [type]);
+    try {
+      setPosts(await listApprovedPosts({ limit: 12 }));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
   useEffect(() => {
-    const timer = setTimeout(() => { void load(); }, 0);
-    return () => clearTimeout(timer);
+    void load();
   }, [load]);
-  const results = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
-    return posts.filter((post) => !normalized || [post.productName, post.categoryLabel, post.locationLabel, post.description].some((value) => value.toLowerCase().includes(normalized)));
-  }, [posts, query]);
-
   return (
-    <View style={[styles.root, { backgroundColor: colors.background }]}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        <Text style={[styles.title, { color: colors.foreground }]}>{t("search.title")}</Text>
-        <Text style={[styles.subtitle, { color: colors.muted }]}>{t("home.subtitle")}</Text>
-        <View style={[styles.searchBox, { backgroundColor: colors.surface, borderColor: colors.border }]}><Ionicons name="search-outline" size={20} color={colors.muted} /><TextInput value={query} onChangeText={setQuery} placeholder={t("search.placeholder")} placeholderTextColor={colors.muted} style={[styles.input, { color: colors.foreground }]} returnKeyType="search" accessibilityLabel={t("search.placeholder")} /></View>
-        <View style={styles.filterHeader}><Text style={[styles.filterTitle, { color: colors.foreground }]}>{t("search.filters")}</Text><Ionicons name="options-outline" size={18} color={colors.muted} /></View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters}><FilterChip label={t("search.all")} active={type === "ALL"} onPress={() => setType("ALL")} /><FilterChip label={t("post.have")} active={type === "HAVE"} onPress={() => setType("HAVE")} /><FilterChip label={t("post.need")} active={type === "NEED"} onPress={() => setType("NEED")} /></ScrollView>
-        {error ? <View style={[styles.errorBox, { backgroundColor: "#FEF2F2", borderColor: "#FECACA" }]}><Text style={[styles.errorText, { color: colors.error }]}>{error}</Text></View> : null}
-        <Text style={[styles.resultCount, { color: colors.muted }]}>{results.length} {results.length === 1 ? "listing" : "listings"}</Text>
-        {loading && results.length === 0 ? <ActivityIndicator color={colors.primary} style={styles.loader} /> : results.length === 0 ? <EmptyState title={t("search.noResults")} body={t("search.noResultsBody")} icon="search-outline" /> : results.map((post) => <MarketplaceCard key={post.id} post={post} onPress={() => router.push({ pathname: "/post/[id]", params: { id: post.id } })} />)}
+    <View style={styles.root}>
+      <View style={styles.topbar}>
+        <Pressable onPress={() => router.push("/(tabs)")}>
+          <Ionicons name="arrow-back" size={23} color="#FFFFFF" />
+        </Pressable>
+        <Text style={styles.topbarTitle}>WATCHLIST</Text>
+        <View style={{ width: 23 }} />
+      </View>
+      <ScrollView contentContainerStyle={styles.content}>
+        {
+          <Text style={styles.subtitle}>
+            Save agricultural products you want to compare or contact later.
+          </Text>
+        }
+        {loading ? (
+          <ActivityIndicator color="#2F8BEA" style={styles.loader} />
+        ) : posts.length === 0 ? (
+          <View style={styles.empty}>
+            <Ionicons name="star-outline" size={40} color="#8C969E" />
+            <Text style={styles.emptyTitle}>Your watchlist is empty</Text>
+            <Text style={styles.emptyBody}>
+              Tap the star on a supply listing to keep it here.
+            </Text>
+          </View>
+        ) : (
+          posts.map((post) => (
+            <Pressable
+              key={post.id}
+              onPress={() =>
+                router.push({ pathname: "/post/[id]", params: { id: post.id } })
+              }
+              style={styles.row}
+            >
+              <View style={styles.star}>
+                <Ionicons name="star" size={21} color="#F0C53B" />
+              </View>
+              <View style={styles.copy}>
+                <Text style={styles.name}>{post.productName}</Text>
+                <Text style={styles.meta}>
+                  {post.categoryLabel} · {post.locationLabel}
+                </Text>
+                <Text style={styles.price}>
+                  {post.priceType === "FIXED" && post.price
+                    ? `${post.price.toLocaleString()} Birr`
+                    : "Contact seller"}
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color="#8C969E" />
+            </Pressable>
+          ))
+        )}
       </ScrollView>
     </View>
   );
 }
-
-const styles = StyleSheet.create({ root: { flex: 1 }, content: { paddingHorizontal: Spacing.page, paddingTop: Spacing.xl, paddingBottom: 32, maxWidth: 720, width: "100%", alignSelf: "center" }, title: { ...Typography.title }, subtitle: { ...Typography.body, marginTop: 4, marginBottom: Spacing.xl }, searchBox: { flexDirection: "row", alignItems: "center", gap: Spacing.sm, borderWidth: 1, borderRadius: Radii.md, minHeight: 52, paddingHorizontal: Spacing.lg }, input: { flex: 1, ...Typography.body, paddingVertical: 0 }, filterHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: Spacing.xxl, marginBottom: Spacing.sm }, filterTitle: { ...Typography.heading, fontSize: 15 }, filters: { gap: Spacing.sm, paddingVertical: 2 }, errorBox: { borderWidth: 1, borderRadius: Radii.md, padding: Spacing.md, marginTop: Spacing.lg }, errorText: { ...Typography.caption, lineHeight: 18 }, resultCount: { ...Typography.caption, marginTop: Spacing.xl, marginBottom: Spacing.md }, loader: { marginVertical: Spacing.xxl },
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: "#FFFFFF" },
+  topbar: {
+    height: 74,
+    backgroundColor: "#2F8BEA",
+    paddingHorizontal: 18,
+    paddingTop: 24,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  topbarTitle: { color: "#FFFFFF", fontSize: 18, fontWeight: "800" },
+  content: { padding: 18 },
+  subtitle: {
+    color: "#68727C",
+    fontSize: 15,
+    lineHeight: 22,
+    marginBottom: 20,
+  },
+  loader: { marginTop: 40 },
+  empty: { alignItems: "center", paddingTop: 80 },
+  emptyTitle: { color: "#222", fontSize: 18, fontWeight: "800", marginTop: 12 },
+  emptyBody: {
+    color: "#68727C",
+    textAlign: "center",
+    marginTop: 6,
+    lineHeight: 20,
+  },
+  row: {
+    minHeight: 78,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E1E4E7",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 13,
+  },
+  star: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "#FFF9DF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  copy: { flex: 1 },
+  name: { color: "#1C5EA8", fontSize: 16, fontWeight: "800" },
+  meta: { color: "#68727C", fontSize: 12, marginTop: 4 },
+  price: { color: "#78A633", fontSize: 13, fontWeight: "800", marginTop: 4 },
 });

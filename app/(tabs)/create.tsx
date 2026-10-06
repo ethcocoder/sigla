@@ -1,28 +1,132 @@
 import { router } from "expo-router";
-import { StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Ionicons } from "@/components/ionicons";
 
-import { BrandLockup } from "@/components/brand-lockup";
-import { PostTypeCard } from "@/components/post-type-card";
-import { useColors } from "@/hooks/use-colors";
-import { Spacing, Typography } from "@/lib/_core/theme";
-import { useTranslation } from "@/lib/i18n-provider";
+const cities = [
+  "Addis Ababa",
+  "Adama - Bishoftu",
+  "Bahir Dar",
+  "Dessie - Kombolcha",
+  "Dire Dawa - Harar",
+  "Gondar",
+  "Hawassa - Shashemene",
+  "Jijiga",
+  "Jimma",
+  "Mekele",
+];
 
 export default function CreateScreen() {
-  const colors = useColors("light");
-  const { t } = useTranslation();
+  const [city, setCity] = useState("");
   return (
-    <View style={[styles.root, { backgroundColor: colors.background }]}>
-      <View style={styles.content}>
-        <BrandLockup />
-        <Text style={[styles.title, { color: colors.foreground }]}>{t("create.title")}</Text>
-        <Text style={[styles.subtitle, { color: colors.muted }]}>{t("create.subtitle")}</Text>
-        <PostTypeCard type="HAVE" body={t("create.haveBody")} onPress={() => router.push({ pathname: "/post/new", params: { type: "HAVE" } })} />
-        <PostTypeCard type="NEED" body={t("create.needBody")} onPress={() => router.push({ pathname: "/post/new", params: { type: "NEED" } })} />
-        <View style={[styles.note, { backgroundColor: colors.primarySoft }]}><Text style={[styles.noteTitle, { color: colors.primaryDark }]}>Your post, moderated with care</Text><Text style={[styles.noteBody, { color: colors.primaryDark }]}>Every community listing is reviewed before it appears in the public feed.</Text></View>
+    <View style={styles.root}>
+      <View style={styles.topbar}>
+        <Text style={styles.topbarTitle}>POST</Text>
       </View>
+      <ScrollView contentContainerStyle={styles.content}>
+        <Text style={styles.title}>Where are you posting from?</Text>
+        <Text style={styles.subtitle}>
+          Select your city so nearby farmers and suppliers can find your
+          agricultural listing.
+        </Text>
+        <View style={styles.cityCard}>
+          {cities.map((item) => (
+            <Pressable
+              key={item}
+              onPress={() => setCity(item)}
+              style={styles.cityRow}
+            >
+              <View style={[styles.radio, city === item && styles.radioActive]}>
+                {city === item ? <View style={styles.radioDot} /> : null}
+              </View>
+              <Text style={styles.cityText}>{item}</Text>
+            </Pressable>
+          ))}
+        </View>
+        <Pressable
+          disabled={!city}
+          onPress={() =>
+            router.push({ pathname: "/post/new", params: { city } })
+          }
+          style={[styles.next, !city && styles.nextDisabled]}
+        >
+          <Text style={styles.nextText}>NEXT</Text>
+          <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+        </Pressable>
+      </ScrollView>
     </View>
   );
 }
 
-const styles = StyleSheet.create({ root: { flex: 1 }, content: { paddingHorizontal: Spacing.page, paddingTop: Spacing.xl, maxWidth: 720, width: "100%", alignSelf: "center" }, title: { ...Typography.title, marginTop: 42 }, subtitle: { ...Typography.body, marginTop: Spacing.sm, marginBottom: Spacing.xxl }, note: { borderRadius: 16, padding: Spacing.lg, marginTop: Spacing.md }, noteTitle: { ...Typography.heading, fontSize: 15 }, noteBody: { ...Typography.caption, lineHeight: 18, marginTop: 4 },
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: "#FFFFFF" },
+  topbar: {
+    height: 74,
+    backgroundColor: "#2F8BEA",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    paddingBottom: 15,
+  },
+  topbarTitle: {
+    color: "#FFFFFF",
+    fontSize: 20,
+    fontWeight: "800",
+    letterSpacing: 0.6,
+  },
+  content: { padding: 20, paddingBottom: 40 },
+  title: {
+    color: "#222222",
+    fontSize: 21,
+    fontWeight: "900",
+    textAlign: "center",
+    marginTop: 8,
+  },
+  subtitle: {
+    color: "#6A7177",
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: "center",
+    marginTop: 8,
+    marginBottom: 20,
+  },
+  cityCard: { borderTopWidth: 1, borderTopColor: "#ECEFF1" },
+  cityRow: {
+    minHeight: 49,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ECEFF1",
+  },
+  radio: {
+    width: 25,
+    height: 25,
+    borderRadius: 13,
+    borderWidth: 2,
+    borderColor: "#80868B",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  radioActive: { borderColor: "#2F8BEA" },
+  radioDot: {
+    width: 13,
+    height: 13,
+    borderRadius: 7,
+    backgroundColor: "#2F8BEA",
+  },
+  cityText: { color: "#2C3135", fontSize: 16 },
+  next: {
+    alignSelf: "center",
+    minWidth: 132,
+    minHeight: 48,
+    borderRadius: 10,
+    backgroundColor: "#2F8BEA",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    marginTop: 25,
+  },
+  nextDisabled: { backgroundColor: "#BFC6CC" },
+  nextText: { color: "#FFFFFF", fontSize: 15, fontWeight: "900" },
 });

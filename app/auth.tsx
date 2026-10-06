@@ -1,38 +1,492 @@
-import { useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { useState } from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { router } from "expo-router";
-import { ActionButton } from "@/components/action-button";
-import { BrandLockup } from "@/components/brand-lockup";
-import { useColors } from "@/hooks/use-colors";
-import { getPlatformSettings } from "@/lib/backend/settings";
-import { submitRegistrationPayment } from "@/lib/backend/payments";
-import { signInWithEmail, signInWithGoogle, signUpWithEmail } from "@/lib/firebase";
-import { Radii, Spacing, Typography } from "@/lib/_core/theme";
-import type { MarketplaceSettings } from "@/types/domain";
+import { Ionicons } from "@expo/vector-icons";
+import { signInWithEmail, signInWithGoogle } from "@/lib/firebase";
+
+const palette = {
+  lime: "#A8E600",
+  yellow: "#FFF06B",
+  orange: "#FFB45A",
+  blue: "#2F8BEA",
+  blueDark: "#1468C2",
+  ink: "#111111",
+  muted: "#596146",
+  white: "#FFFFFF",
+  error: "#B42318",
+  field: "#F7FBEA",
+};
 
 export default function AuthScreen() {
-  const colors = useColors("light");
-  const [mode, setMode] = useState<"signIn" | "signUp">("signIn");
-  const [name, setName] = useState(""); const [phone, setPhone] = useState(""); const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [transactionReference, setTransactionReference] = useState("");
-  const [settings, setSettings] = useState<MarketplaceSettings | null>(null); const [busy, setBusy] = useState(false); const [error, setError] = useState<string | null>(null);
-  useEffect(() => { void getPlatformSettings().then(setSettings).catch(() => undefined); }, []);
-  const submit = async () => {
-    setBusy(true); setError(null);
+  const [adminMode, setAdminMode] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const continueWithGoogle = async () => {
+    setBusy(true);
+    setError(null);
     try {
-      if (!email.trim()) throw new Error("Enter your email address.");
-      if (password.length < 8) throw new Error("Use a password with at least 8 characters.");
-      if (mode === "signUp") {
-        if (name.trim().length < 2) throw new Error("Enter your name to create an account.");
-        if (phone.trim().length < 7) throw new Error("Enter a valid sender phone number.");
-        if (!transactionReference.trim()) throw new Error("Enter the Telebirr transaction number.");
-        await signUpWithEmail(email, password, name, phone);
-        await submitRegistrationPayment({ amount: settings?.registrationFee ?? 0, senderPhone: phone, transactionReference, accountHolderName: settings?.telebirrAccountName || "SIGLA administrator" });
-      } else await signInWithEmail(email, password);
-      router.replace("/(tabs)");
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "Unable to authenticate. Please try again."); } finally { setBusy(false); }
+      await signInWithGoogle();
+      if (typeof window !== "undefined") router.replace("/(tabs)");
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "Unable to continue with Google.",
+      );
+    } finally {
+      setBusy(false);
+    }
   };
-  const google = async () => { setBusy(true); setError(null); try { await signInWithGoogle(); if (typeof window !== "undefined") return; router.replace("/(tabs)"); } catch (cause) { setError(cause instanceof Error ? cause.message : "Unable to continue with Google."); } finally { setBusy(false); } };
-  return <ScrollView contentContainerStyle={[styles.root, { backgroundColor: colors.background }]} keyboardShouldPersistTaps="handled"><View style={styles.content}><BrandLockup /><View style={styles.header}><Text style={[styles.title, { color: colors.foreground }]}>{mode === "signIn" ? "Welcome back" : "Join SIGLA"}</Text><Text style={[styles.subtitle, { color: colors.muted }]}>{mode === "signIn" ? "Sign in to manage your listings and connect with the marketplace." : "Create your account and submit your Telebirr payment for administrator verification."}</Text></View><View style={styles.form}>{mode === "signUp" ? <><Field label="Name" value={name} onChangeText={setName} placeholder="Your full name" colors={colors} /><Field label="Sender phone number" value={phone} onChangeText={setPhone} placeholder="Phone used to send Telebirr" keyboardType="phone-pad" colors={colors} /><View style={[styles.paymentBox, { backgroundColor: colors.secondarySoft }]}><Text style={[styles.paymentTitle, { color: colors.secondaryDark }]}>Registration payment</Text><Text style={[styles.paymentBody, { color: colors.secondaryDark }]}>Send {settings?.registrationFee?.toLocaleString() ?? "…"} ETB to the administrator Telebirr account, then enter the transaction number below.</Text><Text style={[styles.paymentValue, { color: colors.secondaryDark }]}>Mobile: {settings?.telebirrNumber || "Not configured yet"}</Text><Text style={[styles.paymentValue, { color: colors.secondaryDark }]}>Account holder: {settings?.telebirrAccountName || "Not configured yet"}</Text></View><Field label="Telebirr transaction number" value={transactionReference} onChangeText={setTransactionReference} placeholder="e.g. FT123456789" autoCapitalize="characters" colors={colors} /></> : null}<Field label="Email" value={email} onChangeText={setEmail} placeholder="you@example.com" keyboardType="email-address" autoCapitalize="none" colors={colors} /><Field label="Password" value={password} onChangeText={setPassword} placeholder="At least 8 characters" secureTextEntry colors={colors} />{error ? <Text style={[styles.error, { color: colors.error }]}>{error}</Text> : null}<ActionButton label={busy ? "Please wait…" : mode === "signIn" ? "Sign in" : "Create account & submit for verification"} disabled={busy} onPress={() => void submit()} />{mode === "signIn" ? <ActionButton label="Continue with Google" variant="outline" disabled={busy} onPress={() => void google()} /> : null}</View><Pressable onPress={() => { setMode(mode === "signIn" ? "signUp" : "signIn"); setError(null); }} accessibilityRole="button"><Text style={[styles.switchText, { color: colors.primaryDark }]}>{mode === "signIn" ? "New to SIGLA? Create an account" : "Already have an account? Sign in"}</Text></Pressable></View></ScrollView>;
+
+  const continueAsAdmin = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      if (!email.trim())
+        throw new Error("Enter the administrator email address.");
+      if (!password) throw new Error("Enter the administrator password.");
+      await signInWithEmail(email, password);
+      router.replace("/(tabs)/admin");
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "Unable to sign in as administrator.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView
+        contentContainerStyle={styles.root}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.hero}>
+          <View
+            style={styles.brandRow}
+            accessibilityRole="header"
+            accessibilityLabel="SIGLA ሲግላ"
+          >
+            <View style={styles.brandMark}>
+              <View style={[styles.leaf, styles.leafLeft]} />
+              <View style={[styles.leaf, styles.leafRight]} />
+              <View style={styles.stem} />
+            </View>
+            <View>
+              <Text style={styles.wordmark}>SIGLA</Text>
+              <Text style={styles.amharic}>ሲግላ</Text>
+            </View>
+          </View>
+
+          <View style={styles.headlineBlock}>
+            <Text style={styles.amharicHeadline}>የግብርና እቃዎች</Text>
+            <Text style={styles.headline}>በአንድ ቦታ</Text>
+            <Text style={styles.supporting}>
+              Find trusted herbicides, pesticides, fertilizers, and other
+              crop-care supplies from nearby sellers.
+            </Text>
+          </View>
+
+          <View style={styles.categoryRow}>
+            <Category
+              icon="leaf-outline"
+              label="Fertilizer"
+              color={palette.yellow}
+            />
+            <Category
+              icon="bug-outline"
+              label="Pesticide"
+              color={palette.orange}
+            />
+            <Category
+              icon="flask-outline"
+              label="Herbicide"
+              color={palette.white}
+            />
+          </View>
+        </View>
+
+        <View style={styles.card}>
+          <View style={styles.cardAccent} />
+          <Text style={styles.cardEyebrow}>
+            {adminMode ? "SIGLA ADMINISTRATION" : "AGRICULTURAL SUPPLY MARKET"}
+          </Text>
+          <Text style={styles.cardTitle}>
+            {adminMode ? "Administrator sign in" : "Start with Google"}
+          </Text>
+          <Text style={styles.cardBody}>
+            {adminMode
+              ? "Use the administrator account to review listings, manage users, and maintain marketplace settings."
+              : "Use your Google account to discover and share agricultural supplies. No registration email or password needed."}
+          </Text>
+
+          {adminMode ? (
+            <View style={styles.adminForm}>
+              <Field
+                label="Administrator email"
+                value={email}
+                onChangeText={setEmail}
+                placeholder="admin@example.com"
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+              <Field
+                label="Password"
+                value={password}
+                onChangeText={setPassword}
+                placeholder="Enter your password"
+                secureTextEntry
+              />
+            </View>
+          ) : null}
+
+          {error ? <Text style={styles.error}>{error}</Text> : null}
+
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={
+              adminMode ? "Sign in as administrator" : "Continue with Google"
+            }
+            disabled={busy}
+            onPress={() =>
+              void (adminMode ? continueAsAdmin() : continueWithGoogle())
+            }
+            style={({ pressed }) => [
+              styles.primaryButton,
+              pressed && styles.pressed,
+              busy && styles.disabled,
+            ]}
+          >
+            {busy ? (
+              <ActivityIndicator color={palette.white} />
+            ) : adminMode ? (
+              <Ionicons
+                name="shield-checkmark-outline"
+                size={21}
+                color={palette.white}
+              />
+            ) : (
+              <View style={styles.googleIcon}>
+                <Text style={styles.googleG}>G</Text>
+              </View>
+            )}
+            <Text style={styles.primaryLabel}>
+              {busy
+                ? "Connecting…"
+                : adminMode
+                  ? "Sign in to admin"
+                  : "Continue with Google"}
+            </Text>
+            {!busy ? (
+              <Ionicons name="arrow-forward" size={20} color={palette.white} />
+            ) : null}
+          </Pressable>
+
+          <Text style={styles.privacyNote}>
+            {adminMode
+              ? "Admin access is restricted to approved SIGLA administrators."
+              : "By continuing, you agree to use SIGLA responsibly and keep marketplace interactions respectful."}
+          </Text>
+        </View>
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={
+            adminMode
+              ? "Return to Google sign in"
+              : "Open administrator sign in"
+          }
+          onPress={() => {
+            setAdminMode((current) => !current);
+            setError(null);
+          }}
+          style={({ pressed }) => [
+            styles.adminLink,
+            pressed && styles.linkPressed,
+          ]}
+        >
+          <Ionicons
+            name={adminMode ? "arrow-back-outline" : "shield-outline"}
+            size={15}
+            color={palette.ink}
+          />
+          <Text style={styles.adminLinkText}>
+            {adminMode ? "Back to marketplace sign in" : "Admin sign in"}
+          </Text>
+        </Pressable>
+
+        <Text style={styles.footer}>Grow smarter. Trade safely. SIGLA.</Text>
+      </ScrollView>
+    </SafeAreaView>
+  );
 }
-function Field({ label, value, onChangeText, placeholder, secureTextEntry, keyboardType, autoCapitalize, colors }: { label: string; value: string; onChangeText: (value: string) => void; placeholder: string; secureTextEntry?: boolean; keyboardType?: "email-address" | "phone-pad"; autoCapitalize?: "none" | "characters"; colors: ReturnType<typeof useColors> }) { return <View style={styles.field}><Text style={[styles.label, { color: colors.foreground }]}>{label}</Text><TextInput value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={colors.muted} secureTextEntry={secureTextEntry} keyboardType={keyboardType} autoCapitalize={autoCapitalize} style={[styles.input, { color: colors.foreground, backgroundColor: colors.surface, borderColor: colors.border }]} /></View>; }
-const styles = StyleSheet.create({ root: { flexGrow: 1 }, content: { width: "100%", maxWidth: 520, alignSelf: "center", padding: Spacing.page, paddingTop: 56, paddingBottom: 48 }, header: { marginTop: 56 }, title: { ...Typography.title, fontSize: 30 }, subtitle: { ...Typography.body, marginTop: Spacing.sm, lineHeight: 23 }, form: { marginTop: Spacing.xxl }, field: { marginBottom: Spacing.lg }, label: { ...Typography.caption, fontWeight: "700", marginBottom: Spacing.sm }, input: { minHeight: 52, borderWidth: 1, borderRadius: Radii.md, paddingHorizontal: Spacing.md, paddingVertical: 12, ...Typography.body }, paymentBox: { borderRadius: Radii.md, padding: Spacing.md, marginBottom: Spacing.lg }, paymentTitle: { ...Typography.heading, fontSize: 16 }, paymentBody: { ...Typography.caption, lineHeight: 18, marginTop: 5 }, paymentValue: { ...Typography.body, fontWeight: "700", marginTop: 8 }, error: { ...Typography.caption, lineHeight: 18, marginBottom: Spacing.md }, switchText: { ...Typography.body, textAlign: "center", fontWeight: "700", marginTop: Spacing.xl } });
+
+function Category({
+  icon,
+  label,
+  color,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  color: string;
+}) {
+  return (
+    <View style={[styles.categoryPill, { backgroundColor: color }]}>
+      <Ionicons name={icon} size={16} color={palette.ink} />
+      <Text style={styles.categoryText}>{label}</Text>
+    </View>
+  );
+}
+
+function Field({
+  label,
+  value,
+  onChangeText,
+  placeholder,
+  secureTextEntry,
+  keyboardType,
+  autoCapitalize,
+}: {
+  label: string;
+  value: string;
+  onChangeText: (value: string) => void;
+  placeholder: string;
+  secureTextEntry?: boolean;
+  keyboardType?: "email-address";
+  autoCapitalize?: "none";
+}) {
+  return (
+    <View style={styles.field}>
+      <Text style={styles.fieldLabel}>{label}</Text>
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={palette.muted}
+        secureTextEntry={secureTextEntry}
+        keyboardType={keyboardType}
+        autoCapitalize={autoCapitalize}
+        autoCorrect={false}
+        style={styles.input}
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: palette.lime },
+  root: { flexGrow: 1, paddingBottom: 28 },
+  hero: { paddingHorizontal: 24, paddingTop: 18, paddingBottom: 30 },
+  brandRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  brandMark: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: palette.ink,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  leaf: {
+    position: "absolute",
+    width: 13,
+    height: 25,
+    borderRadius: 14,
+    backgroundColor: palette.lime,
+  },
+  leafLeft: { left: 9, top: 7, transform: [{ rotate: "35deg" }] },
+  leafRight: { right: 9, top: 5, transform: [{ rotate: "-35deg" }] },
+  stem: {
+    position: "absolute",
+    width: 3,
+    height: 24,
+    bottom: 3,
+    borderRadius: 3,
+    backgroundColor: palette.white,
+    transform: [{ rotate: "8deg" }],
+  },
+  wordmark: {
+    color: palette.ink,
+    fontSize: 20,
+    fontWeight: "900",
+    letterSpacing: 2,
+  },
+  amharic: {
+    color: palette.ink,
+    fontSize: 12,
+    fontWeight: "700",
+    marginTop: -2,
+  },
+  headlineBlock: { marginTop: 56 },
+  amharicHeadline: {
+    color: palette.ink,
+    fontSize: 35,
+    lineHeight: 42,
+    fontWeight: "900",
+    letterSpacing: -1.2,
+  },
+  headline: {
+    color: palette.ink,
+    fontSize: 42,
+    lineHeight: 46,
+    fontWeight: "900",
+    letterSpacing: -1.5,
+  },
+  supporting: {
+    color: palette.muted,
+    fontSize: 16,
+    lineHeight: 24,
+    fontWeight: "600",
+    maxWidth: 360,
+    marginTop: 18,
+  },
+  categoryRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 24,
+  },
+  categoryPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  categoryText: { color: palette.ink, fontSize: 12, fontWeight: "800" },
+  card: {
+    backgroundColor: palette.white,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    paddingHorizontal: 24,
+    paddingTop: 28,
+    paddingBottom: 26,
+    minHeight: 300,
+  },
+  cardAccent: {
+    width: 44,
+    height: 5,
+    backgroundColor: palette.blue,
+    borderRadius: 999,
+    marginBottom: 22,
+  },
+  cardEyebrow: {
+    color: palette.blueDark,
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 1.3,
+  },
+  cardTitle: {
+    color: palette.ink,
+    fontSize: 29,
+    lineHeight: 35,
+    fontWeight: "900",
+    marginTop: 8,
+  },
+  cardBody: {
+    color: palette.muted,
+    fontSize: 15,
+    lineHeight: 22,
+    marginTop: 8,
+    maxWidth: 380,
+  },
+  adminForm: { marginTop: 20, gap: 14 },
+  field: { gap: 6 },
+  fieldLabel: { color: palette.ink, fontSize: 12, fontWeight: "800" },
+  input: {
+    minHeight: 52,
+    borderWidth: 1,
+    borderColor: "#D9E6B6",
+    borderRadius: 14,
+    backgroundColor: palette.field,
+    paddingHorizontal: 14,
+    color: palette.ink,
+    fontSize: 15,
+  },
+  error: {
+    color: palette.error,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: "700",
+    marginTop: 16,
+  },
+  primaryButton: {
+    minHeight: 58,
+    borderRadius: 16,
+    backgroundColor: palette.blue,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 11,
+    paddingHorizontal: 18,
+    marginTop: 24,
+    shadowColor: palette.blueDark,
+    shadowOpacity: 0.22,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+  },
+  googleIcon: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: palette.white,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  googleG: { color: palette.blueDark, fontSize: 17, fontWeight: "900" },
+  primaryLabel: {
+    color: palette.white,
+    fontSize: 16,
+    fontWeight: "900",
+    flex: 1,
+  },
+  privacyNote: {
+    color: palette.muted,
+    fontSize: 11,
+    lineHeight: 16,
+    textAlign: "center",
+    marginTop: 18,
+  },
+  adminLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 18,
+    paddingHorizontal: 20,
+  },
+  adminLinkText: {
+    color: palette.ink,
+    fontSize: 13,
+    fontWeight: "800",
+    textDecorationLine: "underline",
+  },
+  footer: {
+    color: palette.ink,
+    fontSize: 12,
+    fontWeight: "800",
+    textAlign: "center",
+    paddingHorizontal: 24,
+  },
+  pressed: { opacity: 0.84, transform: [{ scale: 0.99 }] },
+  linkPressed: { opacity: 0.62 },
+  disabled: { opacity: 0.72 },
+});

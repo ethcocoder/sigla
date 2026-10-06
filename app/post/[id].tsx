@@ -2,16 +2,229 @@ import { Ionicons } from "@/components/ionicons";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { ActionButton } from "@/components/action-button";
-import { BrandLockup } from "@/components/brand-lockup";
-import { StatusBadge } from "@/components/status-badge";
-import { useColors } from "@/hooks/use-colors";
-import { Radii, Spacing, Typography } from "@/lib/_core/theme";
-import { useTranslation } from "@/lib/i18n-provider";
-import { getSafeErrorMessage } from "@/lib/error-message";
-import { showContactOptions } from "@/lib/contact";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { getPostById } from "@/lib/backend/marketplace";
+import { showContactOptions } from "@/lib/contact";
 import type { MarketplacePost } from "@/types/domain";
-export default function PostDetailScreen() { const colors = useColors("light"); const { t } = useTranslation(); const { id } = useLocalSearchParams<{ id?: string }>(); const [post, setPost] = useState<MarketplacePost | null>(null); const [error, setError] = useState<string | null>(null); useEffect(() => { if (!id) return; void getPostById(id).then(setPost).catch((cause) => setError(getSafeErrorMessage(cause, "network"))); }, [id]); if (!post && !error) return <View style={[styles.center, { backgroundColor: colors.background }]}><ActivityIndicator color={colors.primary} /></View>; if (!post) return <View style={[styles.center, { backgroundColor: colors.background }]}><Text style={[styles.error, { color: colors.error }]}>{error ?? "Listing not found."}</Text><ActionButton label="Go back" compact onPress={() => router.back()} /></View>; const price = post.priceType === "FIXED" && post.price != null ? `${post.price.toLocaleString()} ETB` : post.priceType === "NEGOTIABLE" ? t("post.negotiable") : t("post.contactForPrice"); return <View style={[styles.root, { backgroundColor: colors.background }]}><ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}><View style={styles.topbar}><Pressable onPress={() => router.back()} accessibilityRole="button" style={styles.back}><Ionicons name="arrow-back" size={22} color={colors.foreground} /></Pressable><BrandLockup compact /><View style={{ width: 42 }} /></View>{post.imageUrl ? <Image source={{ uri: post.imageUrl }} style={styles.image} contentFit="cover" cachePolicy="memory-disk" /> : <View style={[styles.image, styles.imagePlaceholder, { backgroundColor: colors.surface }]}><Ionicons name="image-outline" size={40} color={colors.muted} /></View>}<View style={styles.badges}><StatusBadge kind="postType" type={post.type} /><Text style={[styles.time, { color: colors.muted }]}>{post.createdAtLabel}</Text></View><Text style={[styles.category, { color: colors.primaryDark }]}>{post.categoryLabel}</Text><Text style={[styles.title, { color: colors.foreground }]}>{post.productName}</Text><View style={styles.metaGrid}><View><Text style={[styles.metaLabel, { color: colors.muted }]}>{t("common.quantity")}</Text><Text style={[styles.metaValue, { color: colors.foreground }]}>{post.quantity} {post.unit}</Text></View><View><Text style={[styles.metaLabel, { color: colors.muted }]}>{t("common.location")}</Text><Text style={[styles.metaValue, { color: colors.foreground }]}>{post.locationLabel}</Text></View><View><Text style={[styles.metaLabel, { color: colors.muted }]}>Price</Text><Text style={[styles.metaValue, { color: colors.foreground }]}>{price}</Text></View></View><Text style={[styles.description, { color: colors.muted }]}>{post.description}</Text><View style={[styles.poster, { backgroundColor: colors.surface, borderColor: colors.border }]}><View style={[styles.avatar, { backgroundColor: colors.primarySoft }]}><Text style={[styles.avatarText, { color: colors.primaryDark }]}>{post.poster.name.charAt(0)}</Text></View><View style={styles.posterCopy}><Text style={[styles.posterName, { color: colors.foreground }]}>{post.poster.name}</Text><Text style={[styles.posterLocation, { color: colors.muted }]}>{post.poster.locationLabel}</Text></View><Ionicons name="shield-checkmark-outline" size={22} color={colors.primary} /></View><ActionButton label={t("home.contact")} onPress={() => showContactOptions(post)} /></ScrollView></View>; }
-const styles = StyleSheet.create({ root: { flex: 1 }, center: { flex: 1, alignItems: "center", justifyContent: "center", padding: Spacing.xl, gap: Spacing.md }, error: { ...Typography.body, textAlign: "center" }, content: { paddingHorizontal: Spacing.page, paddingBottom: 36, maxWidth: 720, width: "100%", alignSelf: "center" }, topbar: { height: 76, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }, back: { width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center" }, image: { width: "100%", height: 280, borderRadius: Radii.lg, backgroundColor: "#E2E8F0" }, imagePlaceholder: { alignItems: "center", justifyContent: "center" }, badges: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: Spacing.lg }, time: { ...Typography.caption }, category: { ...Typography.label, marginTop: Spacing.xl, textTransform: "uppercase" }, title: { ...Typography.display, fontSize: 30, marginTop: 4 }, metaGrid: { flexDirection: "row", justifyContent: "space-between", gap: Spacing.md, marginTop: Spacing.xl, paddingVertical: Spacing.lg, borderTopWidth: 1, borderBottomWidth: 1, borderColor: "#E2E8F0" }, metaLabel: { ...Typography.caption }, metaValue: { ...Typography.body, fontWeight: "700", marginTop: 4 }, description: { ...Typography.body, lineHeight: 24, marginTop: Spacing.xl }, poster: { flexDirection: "row", alignItems: "center", borderWidth: 1, borderRadius: Radii.md, padding: Spacing.md, marginVertical: Spacing.xxl }, avatar: { width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center" }, avatarText: { fontWeight: "800", fontSize: 18 }, posterCopy: { flex: 1, marginLeft: Spacing.md }, posterName: { ...Typography.body, fontWeight: "700" }, posterLocation: { ...Typography.caption, marginTop: 2 } });
+
+export default function PostDetailScreen() {
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const [post, setPost] = useState<MarketplacePost | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    if (id)
+      void getPostById(id)
+        .then(setPost)
+        .catch((cause) =>
+          setError(
+            cause instanceof Error ? cause.message : "Listing not found.",
+          ),
+        );
+  }, [id]);
+  if (!post && !error)
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator color="#2F8BEA" />
+      </View>
+    );
+  if (!post)
+    return (
+      <View style={styles.center}>
+        <Text>{error ?? "Listing not found."}</Text>
+        <Pressable onPress={() => router.back()}>
+          <Text style={styles.backText}>Go back</Text>
+        </Pressable>
+      </View>
+    );
+  const price =
+    post.priceType === "FIXED" && post.price != null
+      ? `${post.price.toLocaleString()} Birr`
+      : post.priceType === "NEGOTIABLE"
+        ? "Negotiable"
+        : "Contact seller";
+  return (
+    <View style={styles.root}>
+      <View style={styles.topbar}>
+        <Pressable onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+        </Pressable>
+        <Text style={styles.topbarTitle} numberOfLines={1}>
+          {post.productName}
+        </Text>
+        <Ionicons name="flag-outline" size={22} color="#FFFFFF" />
+      </View>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.content}
+      >
+        {post.imageUrl ? (
+          <Image
+            source={{ uri: post.imageUrl }}
+            style={styles.image}
+            contentFit="cover"
+          />
+        ) : (
+          <View style={[styles.image, styles.placeholder]}>
+            <Ionicons name="image-outline" size={46} color="#9AA3AB" />
+          </View>
+        )}
+        <View style={styles.seenRow}>
+          <Text style={styles.seen}>Agricultural supply</Text>
+          <Pressable>
+            <Ionicons name="star-outline" size={25} color="#222" />
+          </Pressable>
+        </View>
+        <Text style={styles.price}>{price}</Text>
+        <Text style={styles.title}>{post.productName}</Text>
+        <Text style={styles.subTitle}>
+          {post.categoryLabel} ·{" "}
+          {post.type === "HAVE"
+            ? "Available from supplier"
+            : "Wanted by farmer"}
+        </Text>
+        <View style={styles.details}>
+          <Detail label="Quantity" value={`${post.quantity} ${post.unit}`} />
+          <Detail label="Location" value={post.locationLabel} />
+          <Detail label="Seller" value={post.poster.name} />
+        </View>
+        <Text style={styles.description}>{post.description}</Text>
+        <View style={styles.actions}>
+          <Pressable
+            onPress={() => showContactOptions(post)}
+            style={styles.action}
+          >
+            <Ionicons name="call-outline" size={20} color="#222" />
+            <Text style={styles.actionText}>CALL SELLER</Text>
+          </Pressable>
+          <Pressable
+            onPress={() =>
+              router.push({
+                pathname: "/messages/chat" as never,
+                params: {
+                  otherUserId: post.poster.id,
+                  otherName: post.poster.name,
+                  listingId: post.id,
+                  listingName: post.productName,
+                },
+              })
+            }
+            style={styles.action}
+          >
+            <Ionicons name="chatbox-ellipses-outline" size={20} color="#222" />
+            <Text style={styles.actionText}>MESSAGE SELLER</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
+function Detail({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.detail}>
+      <Text style={styles.detailLabel}>{label}</Text>
+      <Text style={styles.detailValue}>{value}</Text>
+    </View>
+  );
+}
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: "#FFFFFF" },
+  center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 15 },
+  topbar: {
+    height: 74,
+    backgroundColor: "#2F8BEA",
+    paddingTop: 24,
+    paddingHorizontal: 18,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  topbarTitle: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "800",
+    maxWidth: "72%",
+  },
+  content: { paddingBottom: 35 },
+  image: { width: "100%", height: 320, backgroundColor: "#F0F2F3" },
+  placeholder: { alignItems: "center", justifyContent: "center" },
+  seenRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingTop: 9,
+  },
+  seen: { color: "#68727C", fontSize: 13 },
+  price: {
+    color: "#2F76BD",
+    fontSize: 27,
+    fontWeight: "900",
+    paddingHorizontal: 16,
+    marginTop: 3,
+  },
+  title: {
+    color: "#202326",
+    fontSize: 19,
+    fontWeight: "800",
+    paddingHorizontal: 16,
+    marginTop: 7,
+  },
+  subTitle: {
+    color: "#68727C",
+    fontSize: 14,
+    paddingHorizontal: 16,
+    marginTop: 6,
+  },
+  details: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 17,
+    marginTop: 16,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: "#E0E3E6",
+  },
+  detail: { flex: 1 },
+  detailLabel: { color: "#8A939A", fontSize: 11, fontWeight: "700" },
+  detailValue: {
+    color: "#292D31",
+    fontSize: 13,
+    fontWeight: "800",
+    marginTop: 5,
+  },
+  description: {
+    color: "#343A40",
+    fontSize: 15,
+    lineHeight: 23,
+    paddingHorizontal: 16,
+    paddingTop: 17,
+  },
+  actions: {
+    flexDirection: "row",
+    gap: 5,
+    paddingHorizontal: 16,
+    marginTop: 25,
+  },
+  action: {
+    flex: 1,
+    minHeight: 54,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: "#E6D23B",
+    backgroundColor: "#DCEBFF",
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 8,
+  },
+  actionText: { color: "#1D2226", fontSize: 12, fontWeight: "900" },
+  backText: { color: "#2F8BEA", fontWeight: "800" },
+});

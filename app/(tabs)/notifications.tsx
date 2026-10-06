@@ -1,20 +1,161 @@
-import { Ionicons } from "@/components/ionicons";
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
-import { EmptyState } from "@/components/empty-state";
-import { useColors } from "@/hooks/use-colors";
-import { Radii, Spacing, Typography } from "@/lib/_core/theme";
-import { getSafeErrorMessage } from "@/lib/error-message";
-import { useTranslation } from "@/lib/i18n-provider";
-import { listNotifications, markNotificationRead } from "@/lib/backend/notifications";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { Ionicons } from "@/components/ionicons";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
-import type { NotificationItem } from "@/types/domain";
-export default function NotificationsScreen() {
-  const colors = useColors("light"); const { t } = useTranslation(); const { session } = useFirebaseAuth();
-  const [items, setItems] = useState<NotificationItem[]>([]); const [loading, setLoading] = useState(true); const [error, setError] = useState<string | null>(null); const userId = session?.user.id;
-  const load = useCallback(async () => { if (!userId) return; setLoading(true); try { setError(null); setItems(await listNotifications(userId)); } catch (cause) { setError(getSafeErrorMessage(cause, "network")); } finally { setLoading(false); } }, [userId]);
-  useEffect(() => { const timer = setTimeout(() => void load(), 0); return () => clearTimeout(timer); }, [load]);
-  const read = async (item: NotificationItem) => { if (item.read) return; setItems((current) => current.map((entry) => entry.id === item.id ? { ...entry, read: true } : entry)); try { await markNotificationRead(item.id); } catch { await load(); } };
-  return <View style={[styles.root, { backgroundColor: colors.background }]}><ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void load()} tintColor={colors.primary} />}><Text style={[styles.title, { color: colors.foreground }]}>{t("notifications.title")}</Text><Text style={[styles.subtitle, { color: colors.muted }]}>{t("notifications.emptyBody")}</Text>{error ? <Text style={[styles.error, { color: colors.error }]}>{error}</Text> : null}{loading && items.length === 0 ? <ActivityIndicator color={colors.primary} style={styles.loader} /> : items.length === 0 ? <EmptyState title={t("notifications.emptyTitle")} body={t("notifications.emptyBody")} icon="notifications-outline" /> : items.map((item) => <View key={item.id} onTouchEnd={() => void read(item)} style={[styles.item, { backgroundColor: colors.surface, borderColor: colors.border }]}><View style={[styles.icon, { backgroundColor: item.read ? colors.background : colors.primarySoft }]}><Ionicons name={item.kind === "PAYMENT" ? "receipt-outline" : item.kind === "POST" ? "document-text-outline" : "megaphone-outline"} size={20} color={item.read ? colors.muted : colors.primaryDark} /></View><View style={styles.copy}><View style={styles.itemHeader}><Text style={[styles.itemTitle, { color: colors.foreground }]}>{item.title}</Text><Text style={[styles.time, { color: colors.muted }]}>{item.createdAtLabel}</Text></View><Text style={[styles.body, { color: colors.muted }]}>{item.body}</Text></View>{!item.read ? <View style={[styles.dot, { backgroundColor: colors.primary }]} /> : null}</View>)}</ScrollView></View>;
+import {
+  listConversations,
+  type ConversationSummary,
+} from "@/lib/backend/messages";
+import { router } from "expo-router";
+
+export default function MessagesScreen() {
+  const { session } = useFirebaseAuth();
+  const [items, setItems] = useState<ConversationSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const load = useCallback(async () => {
+    if (!session?.user.id) return;
+    setLoading(true);
+    try {
+      setError(null);
+      setItems(await listConversations(session.user.id));
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "Unable to load conversations.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [session?.user.id]);
+  useEffect(() => {
+    void load();
+  }, [load]);
+  return (
+    <View style={styles.root}>
+      <View style={styles.topbar}>
+        <Text style={styles.topbarTitle}>MESSAGES</Text>
+        <Ionicons name="create-outline" size={22} color="#FFFFFF" />
+      </View>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={undefined}
+      >
+        {loading ? (
+          <ActivityIndicator color="#2F8BEA" style={styles.loader} />
+        ) : error ? (
+          <Text style={styles.error}>{error}</Text>
+        ) : items.length === 0 ? (
+          <View style={styles.empty}>
+            <Ionicons
+              name="chatbox-ellipses-outline"
+              size={42}
+              color="#8C969E"
+            />
+            <Text style={styles.emptyTitle}>No conversations yet</Text>
+            <Text style={styles.emptyBody}>
+              Open a supply listing and tap Message seller to start a private
+              conversation.
+            </Text>
+          </View>
+        ) : (
+          items.map((item) => (
+            <Pressable
+              key={item.id}
+              onPress={() =>
+                router.push({
+                  pathname: "/messages/chat" as never,
+                  params: {
+                    conversationId: item.id,
+                    otherUserId: item.otherUserId,
+                    otherName: item.otherName,
+                    listingName: item.listingName,
+                  },
+                })
+              }
+              style={styles.thread}
+            >
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>
+                  {item.otherName.charAt(0).toUpperCase()}
+                </Text>
+              </View>
+              <View style={styles.copy}>
+                <View style={styles.header}>
+                  <Text style={styles.title}>{item.otherName}</Text>
+                  <Text style={styles.time}>
+                    {item.updatedAt.toLocaleDateString()}
+                  </Text>
+                </View>
+                {item.listingName ? (
+                  <Text style={styles.listing} numberOfLines={1}>
+                    {item.listingName}
+                  </Text>
+                ) : null}
+                <Text style={styles.body} numberOfLines={2}>
+                  {item.lastMessage}
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color="#8C969E" />
+            </Pressable>
+          ))
+        )}
+      </ScrollView>
+    </View>
+  );
 }
-const styles = StyleSheet.create({ root: { flex: 1 }, content: { paddingHorizontal: Spacing.page, paddingTop: Spacing.xl, paddingBottom: 32, maxWidth: 720, width: "100%", alignSelf: "center" }, title: { ...Typography.title }, subtitle: { ...Typography.body, marginTop: 4, marginBottom: Spacing.xl }, error: { ...Typography.caption, marginBottom: Spacing.md }, loader: { marginVertical: Spacing.xxl }, item: { flexDirection: "row", alignItems: "flex-start", gap: Spacing.md, borderWidth: 1, borderRadius: Radii.md, padding: Spacing.lg, marginBottom: Spacing.md }, icon: { width: 42, height: 42, borderRadius: 14, alignItems: "center", justifyContent: "center" }, copy: { flex: 1 }, itemHeader: { flexDirection: "row", justifyContent: "space-between", gap: Spacing.sm }, itemTitle: { ...Typography.body, fontWeight: "700", flex: 1 }, time: { ...Typography.caption }, body: { ...Typography.caption, lineHeight: 18, marginTop: 4 }, dot: { width: 7, height: 7, borderRadius: 4, marginTop: 6 } });
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: "#FFFFFF" },
+  topbar: {
+    height: 74,
+    backgroundColor: "#2F8BEA",
+    paddingTop: 24,
+    paddingHorizontal: 18,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  topbarTitle: { color: "#FFFFFF", fontSize: 19, fontWeight: "800" },
+  content: { padding: 18 },
+  loader: { marginTop: 40 },
+  error: { color: "#B42318", padding: 16, textAlign: "center" },
+  empty: { alignItems: "center", paddingTop: 90, paddingHorizontal: 25 },
+  emptyTitle: { color: "#222", fontSize: 18, fontWeight: "800", marginTop: 12 },
+  emptyBody: {
+    color: "#68727C",
+    textAlign: "center",
+    lineHeight: 21,
+    marginTop: 7,
+  },
+  thread: {
+    minHeight: 86,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 13,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E1E4E7",
+  },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#D9F0FF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarText: { color: "#2F76BD", fontSize: 19, fontWeight: "900" },
+  copy: { flex: 1 },
+  header: { flexDirection: "row", justifyContent: "space-between", gap: 8 },
+  title: { color: "#24282C", fontSize: 15, fontWeight: "800", flex: 1 },
+  time: { color: "#8A939A", fontSize: 11 },
+  listing: { color: "#2F76BD", fontSize: 12, fontWeight: "700", marginTop: 4 },
+  body: { color: "#68727C", fontSize: 13, lineHeight: 18, marginTop: 4 },
+});
