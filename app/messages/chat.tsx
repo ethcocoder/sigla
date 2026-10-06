@@ -119,7 +119,6 @@ export default function ChatScreen() {
           <Text style={styles.topbarTitle}>{otherName}</Text>
           <Text style={styles.online}>SIGLA marketplace chat</Text>
         </View>
-        <Ionicons name="flag-outline" size={21} color="#FFFFFF" />
       </View>
       {params.listingName ? (
         <View style={styles.listingBar}>

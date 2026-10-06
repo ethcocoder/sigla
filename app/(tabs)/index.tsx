@@ -50,7 +50,12 @@ export default function HomeScreen() {
   return (
     <View style={styles.root}>
       <View style={styles.topbar}>
-        <Pressable style={styles.location} accessibilityRole="button">
+        <Pressable
+          style={styles.location}
+          accessibilityRole="button"
+          accessibilityLabel="Change location"
+          onPress={() => router.push("/(tabs)/search")}
+        >
           <Ionicons name="location" size={21} color="#FFFFFF" />
           <Text style={styles.locationText}>Addis Ababa</Text>
         </Pressable>

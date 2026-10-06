@@ -43,7 +43,14 @@ export default function MessagesScreen() {
     <View style={styles.root}>
       <View style={styles.topbar}>
         <Text style={styles.topbarTitle}>MESSAGES</Text>
-        <Ionicons name="create-outline" size={22} color="#FFFFFF" />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Start a new post"
+          onPress={() => router.push("/(tabs)/create")}
+          hitSlop={8}
+        >
+          <Ionicons name="create-outline" size={22} color="#FFFFFF" />
+        </Pressable>
       </View>
       <ScrollView
         contentContainerStyle={styles.content}

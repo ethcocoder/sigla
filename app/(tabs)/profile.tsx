@@ -14,7 +14,14 @@ export default function ProfileScreen() {
     <View style={styles.root}>
       <View style={styles.topbar}>
         <Text style={styles.topbarTitle}>ACCOUNT</Text>
-        <Ionicons name="settings-outline" size={22} color="#FFFFFF" />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Open settings"
+          onPress={() => router.push("/settings" as never)}
+          hitSlop={8}
+        >
+          <Ionicons name="settings-outline" size={22} color="#FFFFFF" />
+        </Pressable>
       </View>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.profile}>

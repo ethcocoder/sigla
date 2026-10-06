@@ -17,6 +17,7 @@ import type { MarketplacePost } from "@/types/domain";
 export default function PostDetailScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const [post, setPost] = useState<MarketplacePost | null>(null);
+  const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     if (id)
@@ -77,8 +78,19 @@ export default function PostDetailScreen() {
         )}
         <View style={styles.seenRow}>
           <Text style={styles.seen}>Agricultural supply</Text>
-          <Pressable>
-            <Ionicons name="star-outline" size={25} color="#222" />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={
+              saved ? "Remove from watchlist" : "Save to watchlist"
+            }
+            onPress={() => setSaved((current) => !current)}
+            hitSlop={8}
+          >
+            <Ionicons
+              name={saved ? "star" : "star-outline"}
+              size={25}
+              color={saved ? "#E2B735" : "#222"}
+            />
           </Pressable>
         </View>
         <Text style={styles.price}>{price}</Text>
