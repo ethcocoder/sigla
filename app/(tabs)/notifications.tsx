@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -10,7 +10,7 @@ import {
 import { Ionicons } from "@/components/ionicons";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import {
-  listConversations,
+  subscribeToConversations,
   type ConversationSummary,
 } from "@/lib/backend/messages";
 import { router } from "expo-router";
@@ -20,25 +20,20 @@ export default function MessagesScreen() {
   const [items, setItems] = useState<ConversationSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const load = useCallback(async () => {
-    if (!session?.user.id) return;
-    setLoading(true);
-    try {
-      setError(null);
-      setItems(await listConversations(session.user.id));
-    } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : "Unable to load conversations.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [session?.user.id]);
   useEffect(() => {
-    void load();
-  }, [load]);
+    if (!session?.user.id) return undefined;
+    return subscribeToConversations(
+      session.user.id,
+      (nextItems) => {
+        setItems(nextItems);
+        setLoading(false);
+      },
+      (cause) => {
+        setError(cause.message);
+        setLoading(false);
+      },
+    );
+  }, [session?.user.id]);
   return (
     <View style={styles.root}>
       <View style={styles.topbar}>

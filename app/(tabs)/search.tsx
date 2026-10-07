@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -19,7 +19,6 @@ export default function WatchlistScreen() {
   const [posts, setPosts] = useState<MarketplacePost[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    setLoading(true);
     return subscribeApprovedPosts(
       { limit: 12, categoryId: typeof categoryId === "string" ? categoryId : undefined },
       (nextPosts) => {
