@@ -96,6 +96,39 @@ export async function listConversations(
     .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
 }
 
+export function subscribeToConversations(
+  userId: string,
+  onChange: (items: ConversationSummary[]) => void,
+  onError: (error: Error) => void,
+) {
+  return onSnapshot(
+    query(
+      collection(firestore, "conversations"),
+      where("participantIds", "array-contains", userId),
+      limit(50),
+    ),
+    (snapshot) => {
+      const items = snapshot.docs
+        .map((item) => {
+          const row = item.data();
+          const participantIds = (row.participantIds ?? []) as string[];
+          const otherUserId = participantIds.find((id) => id !== userId) ?? "";
+          return {
+            id: item.id,
+            otherUserId,
+            otherName: row.participantNames?.[otherUserId] ?? "SIGLA member",
+            lastMessage: row.lastMessage ?? "Start a conversation",
+            updatedAt: toDate(row.updatedAt),
+            listingName: row.listingName,
+          };
+        })
+        .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+      onChange(items);
+    },
+    (cause) => onError(cause instanceof Error ? cause : new Error("Unable to watch conversations.")),
+  );
+}
+
 export function subscribeToMessages(
   conversationId: string,
   onChange: (messages: ChatMessage[]) => void,

@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@/components/ionicons";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { statusLabel } from "@/lib/backend/profile";
-import { firebaseAuth, signOut } from "@/lib/firebase";
+import { signOut } from "@/lib/firebase";
 
 export default function ProfileScreen() {
   const { session, profile, isAdmin } = useFirebaseAuth();
@@ -72,7 +72,7 @@ export default function ProfileScreen() {
           onPress={() => router.push("/support" as never)}
         />
         <Pressable
-          onPress={() => void signOut(firebaseAuth)}
+          onPress={() => void signOut()}
           style={styles.signOut}
         >
           <Ionicons name="log-out-outline" size={20} color="#D54242" />

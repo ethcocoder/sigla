@@ -6,6 +6,7 @@ import {
   getDoc,
   getDocs,
   limit,
+  onSnapshot,
   query,
   serverTimestamp,
   updateDoc,
@@ -168,6 +169,27 @@ export async function listApprovedPosts(
     .sort((a, b) => b.createdAtLabel.localeCompare(a.createdAtLabel))
     .slice(0, Math.min(queryOptions.limit ?? 12, 50));
 }
+
+export function subscribeApprovedPosts(
+  queryOptions: MarketplaceQuery = {},
+  onChange: (posts: MarketplacePost[]) => void,
+  onError: (error: Error) => void,
+) {
+  return onSnapshot(
+    query(collection(firestore, "posts"), where("status", "==", "APPROVED"), limit(50)),
+    (snapshot) => {
+      const posts = snapshot.docs
+        .map((item) => mapPost(item.id, item.data()))
+        .filter((item) => !queryOptions.type || item.type === queryOptions.type)
+        .filter((item) => !queryOptions.categoryId || item.categoryId === queryOptions.categoryId)
+        .sort((a, b) => b.createdAtLabel.localeCompare(a.createdAtLabel))
+        .slice(0, Math.min(queryOptions.limit ?? 12, 50));
+      onChange(posts);
+    },
+    (cause) => onError(cause instanceof Error ? cause : new Error("Unable to watch listings.")),
+  );
+}
+
 export async function getPostById(id: string): Promise<MarketplacePost | null> {
   const snapshot = await getDoc(doc(firestore, "posts", id));
   return snapshot.exists() ? mapPost(snapshot.id, snapshot.data()) : null;

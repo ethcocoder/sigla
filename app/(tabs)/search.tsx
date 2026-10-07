@@ -9,7 +9,7 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@/components/ionicons";
-import { listApprovedPosts } from "@/lib/backend/marketplace";
+import { subscribeApprovedPosts } from "@/lib/backend/marketplace";
 import type { MarketplacePost } from "@/types/domain";
 import { useTranslation } from "@/lib/i18n-provider";
 
@@ -18,16 +18,17 @@ export default function WatchlistScreen() {
   const { categoryId } = useLocalSearchParams<{ categoryId?: string }>();
   const [posts, setPosts] = useState<MarketplacePost[]>([]);
   const [loading, setLoading] = useState(true);
-  const load = useCallback(async () => {
-    try {
-      setPosts(await listApprovedPosts({ limit: 12, categoryId: typeof categoryId === "string" ? categoryId : undefined }));
-    } finally {
-      setLoading(false);
-    }
-  }, [categoryId]);
   useEffect(() => {
-    void load();
-  }, [load]);
+    setLoading(true);
+    return subscribeApprovedPosts(
+      { limit: 12, categoryId: typeof categoryId === "string" ? categoryId : undefined },
+      (nextPosts) => {
+        setPosts(nextPosts);
+        setLoading(false);
+      },
+      () => setLoading(false),
+    );
+  }, [categoryId]);
   return (
     <View style={styles.root}>
       <View style={styles.topbar}>

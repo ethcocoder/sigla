@@ -1,7 +1,6 @@
 import { getApp, getApps, initializeApp } from "firebase/app";
 import { collection, doc, getFirestore, setDoc, serverTimestamp } from "firebase/firestore";
-import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithCredential, signInWithEmailAndPassword, signInWithPopup, createUserWithEmailAndPassword, signOut, updateProfile, type User } from "firebase/auth";
-import { Platform } from "react-native";
+import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithCredential, signInWithEmailAndPassword, signInWithPopup, createUserWithEmailAndPassword, signOut as firebaseSignOut, updateProfile, type User } from "firebase/auth";
 import { Capacitor } from "@capacitor/core";
 import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
 
@@ -10,7 +9,18 @@ export const firebaseApp = getApps().length > 0 ? getApp() : initializeApp(fireb
 export const firebaseAuth = getAuth(firebaseApp);
 export const firestore = getFirestore(firebaseApp);
 export const googleProvider = new GoogleAuthProvider();
-export { onAuthStateChanged, signOut, type User };
+export { onAuthStateChanged, type User };
+
+export async function signOut() {
+  if (Capacitor.isNativePlatform()) {
+    try {
+      await FirebaseAuthentication.signOut();
+    } catch {
+      // Firebase JS sign-out must still run if the native cache is unavailable.
+    }
+  }
+  await firebaseSignOut(firebaseAuth);
+}
 
 export async function signInWithEmail(email: string, password: string) { return signInWithEmailAndPassword(firebaseAuth, email.trim(), password); }
 
@@ -23,16 +33,19 @@ export async function signUpWithEmail(email: string, password: string, name: str
 }
 
 export async function signInWithGoogle() {
-  if (Platform.OS === "web" || !Capacitor.isNativePlatform()) {
+  // Capacitor serves the Expo web bundle inside the native WebView, so
+  // Platform.OS is still "web" on Android/iOS. Check Capacitor first or the
+  // browser popup path will always win inside the native app.
+  if (!Capacitor.isNativePlatform()) {
     return signInWithPopup(firebaseAuth, googleProvider);
   }
 
-  // Android uses Credential Manager and Google Play services instead of opening Chrome.
-  // The native ID token is exchanged for a Firebase JS SDK credential so the rest of
-  // the existing app (Firestore, profile loading, and auth listeners) stays unchanged.
+  // Use the native Google Play Services account chooser instead of Credential Manager's
+  // one-tap flow. Some Android devices time out inside Credential Manager before the
+  // account picker appears. This path remains fully native and does not open Chrome.
   const nativeResult = await FirebaseAuthentication.signInWithGoogle({
     skipNativeAuth: true,
-    useCredentialManager: true,
+    useCredentialManager: false,
   });
   const idToken = nativeResult.credential?.idToken;
   if (!idToken) throw new Error("Google did not return a native ID token.");

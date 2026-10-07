@@ -17,7 +17,7 @@ import {
   deleteUserPost,
   submitPostForApproval,
 } from "@/lib/backend/marketplace";
-import { listUserPosts } from "@/lib/backend/profile";
+import { subscribeUserPosts, listUserPosts } from "@/lib/backend/profile";
 import { Radii, Spacing, Typography } from "@/lib/_core/theme";
 import { confirmAppDialog } from "@/lib/app-dialog";
 
@@ -47,8 +47,20 @@ export default function MyPostsScreen() {
   }, [userId]);
   useFocusEffect(
     useCallback(() => {
-      void load();
-    }, [load]),
+      if (!userId) return undefined;
+      setLoading(true);
+      return subscribeUserPosts(
+        userId,
+        (nextPosts) => {
+          setPosts(nextPosts);
+          setLoading(false);
+        },
+        (cause) => {
+          setError(cause.message);
+          setLoading(false);
+        },
+      );
+    }, [userId]),
   );
   const performDelete = async (id: string) => {
     setBusyId(id);

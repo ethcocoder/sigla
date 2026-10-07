@@ -11,7 +11,7 @@ import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import AuthScreen from "@/app/auth";
 import { useColors } from "@/hooks/use-colors";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
-import { signOut, firebaseAuth, firestore } from "@/lib/firebase";
+import { signOut, firestore } from "@/lib/firebase";
 import { getPlatformSettings } from "@/lib/backend/settings";
 import { submitRegistrationPayment } from "@/lib/backend/payments";
 
@@ -208,7 +208,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
           </Text>
         ) : null}
         <Pressable
-          onPress={() => void signOut(firebaseAuth)}
+          onPress={() => void signOut()}
           style={styles.signOut}
         >
           <Text style={[styles.signOutText, { color: colors.error }]}>

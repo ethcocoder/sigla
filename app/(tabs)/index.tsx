@@ -13,7 +13,7 @@ import {
 import { Image } from "expo-image";
 import { useColors } from "@/hooks/use-colors";
 import { getSafeErrorMessage } from "@/lib/error-message";
-import { listApprovedPosts } from "@/lib/backend/marketplace";
+import { listApprovedPosts, subscribeApprovedPosts } from "@/lib/backend/marketplace";
 import { getPlatformSettings } from "@/lib/backend/settings";
 import { DEFAULT_CATEGORIES, categoryLabel } from "@/lib/categories";
 import { useTranslation } from "@/lib/i18n-provider";
@@ -43,7 +43,18 @@ export default function HomeScreen() {
   }, []);
   useEffect(() => {
     const timer = setTimeout(() => void load(), 0);
-    return () => clearTimeout(timer);
+    const stopPosts = subscribeApprovedPosts(
+      { limit: 30 },
+      (nextPosts) => {
+        setPosts(nextPosts);
+        setRefreshing(false);
+      },
+      (cause) => setError(getSafeErrorMessage(cause, "network")),
+    );
+    return () => {
+      clearTimeout(timer);
+      stopPosts();
+    };
   }, [load]);
 
   return (

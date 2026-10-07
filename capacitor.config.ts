@@ -2,7 +2,7 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
-  appId: "space.manus.sigla.t014857708537585",
+  appId: "com.sigla.org",
   appName: "SIGLA — ሲግላ",
   webDir: "dist-web",
   server: { androidScheme: "https" },
