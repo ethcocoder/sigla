@@ -17,16 +17,22 @@ import { listApprovedPosts, subscribeApprovedPosts } from "@/lib/backend/marketp
 import { getPlatformSettings } from "@/lib/backend/settings";
 import { DEFAULT_CATEGORIES, categoryLabel } from "@/lib/categories";
 import { useTranslation } from "@/lib/i18n-provider";
+import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
+import { sortRecommendedPosts } from "@/lib/recommendations";
 import type { MarketplacePost } from "@/types/domain";
 
 const blue = "#4F8B2A";
 export default function HomeScreen() {
   const colors = useColors("light");
   const { language, t } = useTranslation();
+  const { profile } = useFirebaseAuth();
   const [posts, setPosts] = useState<MarketplacePost[]>([]);
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const recommendedPosts = sortRecommendedPosts(posts, {
+    location: profile?.locationLabel ?? "Addis Ababa",
+  });
 
   const load = useCallback(async () => {
     setRefreshing(true);
@@ -115,7 +121,10 @@ export default function HomeScreen() {
           ))}
         </ScrollView>
         <View style={styles.feedHeader}>
-          <Text style={styles.feedTitle}>{t("category.title")}</Text>
+          <View style={styles.feedTitleRow}>
+            <Ionicons name="sparkles-outline" size={18} color="#4F8B2A" />
+            <Text style={styles.feedTitle}>Recommended for you</Text>
+          </View>
           <Pressable onPress={() => router.push("/(tabs)/search")}>
             <Ionicons name="swap-vertical" size={22} color="#68727C" />
           </Pressable>
@@ -134,7 +143,7 @@ export default function HomeScreen() {
             </Text>
           </View>
         ) : (
-          posts.map((post) => (
+          recommendedPosts.map((post) => (
             <CompactListing
               key={post.id}
               post={post}
@@ -256,6 +265,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   feedTitle: { color: "#1B5E20", fontSize: 17, fontWeight: "900" },
+  feedTitleRow: { flexDirection: "row", alignItems: "center", gap: 7 },
   error: { padding: 18, fontSize: 13 },
   loader: { marginVertical: 35 },
   listing: {

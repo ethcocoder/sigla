@@ -1,20 +1,16 @@
-import { Platform, Text, type ColorValue } from "react-native";
+import { Ionicons as ExpoIonicons } from "@expo/vector-icons";
+import type { ComponentProps } from "react";
 
-type IoniconProps = { name: string; size?: number; color?: ColorValue; style?: unknown };
+export type IoniconName = ComponentProps<typeof ExpoIonicons>["name"];
+export type IoniconProps = ComponentProps<typeof ExpoIonicons>;
 
-type NativeIconComponent = (props: IoniconProps) => React.ReactElement;
-
-const webGlyphs: Record<string, string> = {
-  "notifications-outline": "♢", "leaf": "⌁", "shield-outline": "◇", "shield-checkmark": "✓", "checkmark-done-outline": "✓", "receipt-outline": "▤", "document-text-outline": "▧", "megaphone-outline": "◖", "checkmark-circle": "✓", "log-out-outline": "↪", "chevron-forward": "›", "arrow-back": "‹", "chevron-down": "⌄", "image-outline": "▧", "refresh-outline": "↻", "trash-outline": "×", "information-circle-outline": "ⓘ", "search-outline": "⌕", "add": "+", "close": "×",
-};
-
+/**
+ * One icon implementation for web and native. Using the real Ionicons font
+ * everywhere avoids platform-specific placeholder glyphs and keeps icon
+ * weight, alignment, and touch targets consistent.
+ */
 export function Ionicons(props: IoniconProps) {
-  if (Platform.OS === "web") {
-    return <Text accessibilityRole="image" style={[{ fontSize: props.size ?? 20, color: props.color }, props.style as any]}>{webGlyphs[props.name] ?? "•"}</Text>;
-  }
-  // Keep the native icon font out of the web bundle/server render.
-  const { Ionicons: NativeIonicons } = require("@expo/vector-icons") as { Ionicons: NativeIconComponent };
-  return <NativeIonicons {...props} />;
+  return <ExpoIonicons {...props} />;
 }
 
-Ionicons.glyphMap = {} as Record<string, string>;
+Ionicons.glyphMap = ExpoIonicons.glyphMap;
