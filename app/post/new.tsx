@@ -36,7 +36,7 @@ import type { MarketplaceSettings, PostType } from "@/types/domain";
 export default function NewPostScreen() {
   const colors = useColors("light");
   const { language, t } = useTranslation();
-  const { isAdmin, profile } = useFirebaseAuth();
+  const { isAdmin } = useFirebaseAuth();
   const { type: rawType, id } = useLocalSearchParams<{
     type?: string;
     id?: string;
@@ -248,7 +248,7 @@ export default function NewPostScreen() {
             <Ionicons name="arrow-back" size={22} color={colors.foreground} />
           </Pressable>
           <Text style={[styles.topbarTitle, { color: colors.foreground }]}>
-            {editing ? "Edit listing" : "Create listing"}
+          {editing ? (language === "am" ? "ማስታወቂያ አርም" : language === "om" ? "Beeksisa sirreessi" : "Edit listing") : (language === "am" ? "ማስታወቂያ ፍጠር" : language === "om" ? "Beeksisa uumi" : "Create listing")}
           </Text>
           <View style={{ width: 42 }} />
         </View>
@@ -257,7 +257,7 @@ export default function NewPostScreen() {
         </Text>
         <Text style={[styles.subtitle, { color: colors.muted }]}>
           {editing
-            ? "Update your listing and submit a new payment for review."
+            ? language === "am" ? "ማስታወቂያዎን ያዘምኑና አዲስ ክፍያ ለግምገማ ያስገቡ።" : language === "om" ? "Beeksisa kee haaromsiitii kaffaltii haaraa qorannoof ergi." : "Update your listing and submit a new payment for review."
             : t("create.subtitle")}
         </Text>
         <View style={styles.typeRow}>
@@ -330,7 +330,7 @@ export default function NewPostScreen() {
           </Pressable>
         </Modal>
         <Field
-          label="Product or item"
+          label={language === "am" ? "የምርት ወይም ዕቃ ስም" : language === "om" ? "Maqaa oomishaa ykn meeshaa" : "Product or item"}
           value={productName}
           onChangeText={setProductName}
           placeholder="e.g. Urea fertilizer"
@@ -339,7 +339,7 @@ export default function NewPostScreen() {
         <View style={styles.row}>
           <View style={styles.half}>
             <Field
-              label="Quantity"
+              label={t("common.quantity")}
               value={quantity}
               onChangeText={setQuantity}
               placeholder="100"
@@ -349,7 +349,7 @@ export default function NewPostScreen() {
           </View>
           <View style={styles.half}>
             <Field
-              label="Unit"
+              label={language === "am" ? "መለኪያ" : language === "om" ? "Safartuu" : "Unit"}
               value={unit}
               onChangeText={setUnit}
               placeholder="bags"
@@ -358,14 +358,14 @@ export default function NewPostScreen() {
           </View>
         </View>
         <Field
-          label="Location"
+          label={t("common.location")}
           value={location}
           onChangeText={setLocation}
           placeholder="Addis Ababa"
           colors={colors}
         />
         <Field
-          label="Description"
+          label={t("common.description")}
           value={description}
           onChangeText={setDescription}
           placeholder="Tell the community more about this listing"

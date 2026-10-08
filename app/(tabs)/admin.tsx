@@ -49,6 +49,7 @@ export default function AdminScreen() {
   const [categories, setCategories] = useState<MarketplaceCategory[]>(DEFAULT_CATEGORIES);
   const [newCategoryEn, setNewCategoryEn] = useState("");
   const [newCategoryAm, setNewCategoryAm] = useState("");
+  const [newCategoryOm, setNewCategoryOm] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [loadingData, setLoadingData] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -480,10 +481,10 @@ export default function AdminScreen() {
               <View key={category.id} style={[styles.categoryRow, { borderColor: colors.border }]}>
                 <View style={styles.categoryCopy}>
                   <Text style={[styles.categoryName, { color: colors.foreground }]}>
-                    {language === "am" ? category.labelAm : category.labelEn}
+                    {language === "am" ? category.labelAm : language === "om" ? category.labelOm || category.labelEn : category.labelEn}
                   </Text>
                   <Text style={[styles.categoryMeta, { color: colors.muted }]}>
-                    {category.labelEn} · {category.labelAm}
+                    {category.labelEn} · {category.labelAm} · {category.labelOm || category.labelEn}
                   </Text>
                 </View>
                 <Pressable
@@ -500,6 +501,7 @@ export default function AdminScreen() {
             <View style={styles.categoryAddBox}>
               <Field label={t("admin.categoryEnglish")} value={newCategoryEn} onChangeText={setNewCategoryEn} placeholder="Tools" colors={colors} />
               <Field label={t("admin.categoryAmharic")} value={newCategoryAm} onChangeText={setNewCategoryAm} placeholder="መሳሪያዎች" colors={colors} />
+              <Field label={t("admin.categoryOromo")} value={newCategoryOm} onChangeText={setNewCategoryOm} placeholder="Meeshaalee" colors={colors} />
               <ActionButton
                 label={t("admin.addCategory")}
                 compact
@@ -508,9 +510,10 @@ export default function AdminScreen() {
                 onPress={() => {
                   const baseId = newCategoryEn.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || `category-${Date.now()}`;
                   const id = categories.some((item) => item.id === baseId) ? `${baseId}-${Date.now()}` : baseId;
-                  setCategories((items) => [...items, { id, labelEn: newCategoryEn.trim(), labelAm: newCategoryAm.trim(), icon: "grid-outline", color: "#9FB3C8", active: true }]);
+                  setCategories((items) => [...items, { id, labelEn: newCategoryEn.trim(), labelAm: newCategoryAm.trim(), labelOm: newCategoryOm.trim() || newCategoryEn.trim(), icon: "grid-outline", color: "#9FB3C8", active: true }]);
                   setNewCategoryEn("");
                   setNewCategoryAm("");
+                  setNewCategoryOm("");
                 }}
               />
             </View>

@@ -69,11 +69,11 @@ export default function HomeScreen() {
         <Pressable
           style={styles.location}
           accessibilityRole="button"
-          accessibilityLabel="Change location"
+          accessibilityLabel={language === "am" ? "ቦታ ቀይር" : language === "om" ? "Bakka jijjiiri" : "Change location"}
           onPress={() => router.push("/(tabs)/search")}
         >
           <Ionicons name="location" size={21} color="#FFFFFF" />
-          <Text style={styles.locationText}>Addis Ababa</Text>
+          <Text style={styles.locationText}>{language === "am" ? "አዲስ አበባ" : "Addis Ababa"}</Text>
         </Pressable>
         <View style={styles.toolbar}>
           <Pressable onPress={() => router.push("/(tabs)/search")}>
@@ -123,7 +123,7 @@ export default function HomeScreen() {
         <View style={styles.feedHeader}>
           <View style={styles.feedTitleRow}>
             <Ionicons name="sparkles-outline" size={18} color="#4F8B2A" />
-            <Text style={styles.feedTitle}>Recommended for you</Text>
+            <Text style={styles.feedTitle}>{t("home.recommended")}</Text>
           </View>
           <Pressable onPress={() => router.push("/(tabs)/search")}>
             <Ionicons name="swap-vertical" size={22} color="#68727C" />

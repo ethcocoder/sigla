@@ -4,19 +4,21 @@ import { Ionicons } from "@/components/ionicons";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { statusLabel } from "@/lib/backend/profile";
 import { signOut } from "@/lib/firebase";
+import { useTranslation } from "@/lib/i18n-provider";
 
 export default function ProfileScreen() {
   const { session, profile, isAdmin } = useFirebaseAuth();
+  const { language, t } = useTranslation();
   const name =
     profile?.name || session?.user.user_metadata.name || "SIGLA member";
   const status = profile?.status ? statusLabel(profile.status) : "Registered";
   return (
     <View style={styles.root}>
       <View style={styles.topbar}>
-        <Text style={styles.topbarTitle}>ACCOUNT</Text>
+        <Text style={styles.topbarTitle}>{t("common.account")}</Text>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Open settings"
+          accessibilityLabel={t("common.settings")}
           onPress={() => router.push("/settings" as never)}
           hitSlop={8}
         >
@@ -42,8 +44,8 @@ export default function ProfileScreen() {
           <Text style={styles.statusLabel}>{status.toUpperCase()}</Text>
           <Text style={styles.statusText}>
             {profile?.status === "ACTIVE"
-              ? "Your SIGLA account is active."
-              : "Your account is waiting for payment verification."}
+              ? language === "am" ? "የSIGLA መለያዎ ንቁ ነው።" : language === "om" ? "Herregni SIGLA kee hojii irra jira." : "Your SIGLA account is active."
+              : language === "am" ? "መለያዎ የክፍያ ማረጋገጫን እየጠበቀ ነው።" : language === "om" ? "Herregni kee mirkaneessa kaffaltii eeggata." : "Your account is waiting for payment verification."}
           </Text>
         </View>
         {isAdmin ? (
@@ -52,22 +54,22 @@ export default function ProfileScreen() {
             style={styles.admin}
           >
             <Ionicons name="shield-checkmark" size={22} color="#FFFFFF" />
-            <Text style={styles.adminText}>Open admin control center</Text>
+            <Text style={styles.adminText}>{language === "am" ? "የአስተዳዳሪ ማዕከል ክፈት" : language === "om" ? "Giddugala bulchaa bani" : "Open admin control center"}</Text>
             <Ionicons name="chevron-forward" size={20} color="#FFFFFF" />
           </Pressable>
         ) : null}
         <Menu
-          label="My posts"
+          label={t("profile.myPosts")}
           icon="document-text-outline"
           onPress={() => router.push("/(tabs)/my-posts" as never)}
         />
         <Menu
-          label="Payment history"
+          label={t("profile.payments")}
           icon="receipt-outline"
           onPress={() => router.push("/(tabs)/notifications")}
         />
         <Menu
-          label="Help & support"
+          label={t("profile.support")}
           icon="help-circle-outline"
           onPress={() => router.push("/support" as never)}
         />
@@ -76,7 +78,7 @@ export default function ProfileScreen() {
           style={styles.signOut}
         >
           <Ionicons name="log-out-outline" size={20} color="#D54242" />
-          <Text style={styles.signOutText}>Sign out</Text>
+          <Text style={styles.signOutText}>{t("common.signOut")}</Text>
         </Pressable>
       </ScrollView>
     </View>

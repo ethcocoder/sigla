@@ -12,6 +12,7 @@ import {
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { signInWithEmail, signInWithGoogle } from "@/lib/firebase";
+import { useTranslation } from "@/lib/i18n-provider";
 
 const palette = {
   lime: "#A8E600",
@@ -27,6 +28,7 @@ const palette = {
 };
 
 export default function AuthScreen() {
+  const { language } = useTranslation();
   const [adminMode, setAdminMode] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -95,28 +97,27 @@ export default function AuthScreen() {
           </View>
 
           <View style={styles.headlineBlock}>
-            <Text style={styles.amharicHeadline}>የግብርና እቃዎች</Text>
-            <Text style={styles.headline}>በአንድ ቦታ</Text>
+          <Text style={styles.amharicHeadline}>{language === "en" ? "Agricultural supplies" : language === "om" ? "Meeshaalee qonnaa" : "የግብርና እቃዎች"}</Text>
+            <Text style={styles.headline}>{language === "en" ? "In one place" : language === "om" ? "Bakka tokkotti" : "በአንድ ቦታ"}</Text>
             <Text style={styles.supporting}>
-              Find trusted herbicides, pesticides, fertilizers, and other
-              crop-care supplies from nearby sellers.
+              {language === "am" ? "ከአቅራቢያዎ ሻጮች የታመኑ ፀረ-አረም፣ ፀረ-ተባይ፣ ማዳበሪያ እና ሌሎች የእርሻ እቃዎችን ያግኙ።" : language === "om" ? "Qoricha aramaa, qoricha ilbiisummaa, xaa'oo fi meeshaalee qonnaa amanamoo gurgurtoota naannoo irraa argadhu." : "Find trusted herbicides, pesticides, fertilizers, and other crop-care supplies from nearby sellers."}
             </Text>
           </View>
 
           <View style={styles.categoryRow}>
             <Category
               icon="leaf-outline"
-              label="Fertilizer"
+              label={language === "am" ? "ማዳበሪያ" : language === "om" ? "Xaa'oo" : "Fertilizer"}
               color={palette.yellow}
             />
             <Category
               icon="bug-outline"
-              label="Pesticide"
+              label={language === "am" ? "ፀረ-ተባይ" : language === "om" ? "Qoricha ilbiisummaa" : "Pesticide"}
               color={palette.orange}
             />
             <Category
               icon="flask-outline"
-              label="Herbicide"
+              label={language === "am" ? "ፀረ-አረም" : language === "om" ? "Qoricha aramaa" : "Herbicide"}
               color={palette.white}
             />
           </View>
@@ -128,12 +129,12 @@ export default function AuthScreen() {
             {adminMode ? "SIGLA ADMINISTRATION" : "AGRICULTURAL SUPPLY MARKET"}
           </Text>
           <Text style={styles.cardTitle}>
-            {adminMode ? "Administrator sign in" : "Start with Google"}
+            {adminMode ? (language === "am" ? "የአስተዳዳሪ መግቢያ" : language === "om" ? "Seensa bulchaa" : "Administrator sign in") : (language === "am" ? "በGoogle ይጀምሩ" : language === "om" ? "Google waliin jalqabi" : "Start with Google")}
           </Text>
           <Text style={styles.cardBody}>
             {adminMode
-              ? "Use the administrator account to review listings, manage users, and maintain marketplace settings."
-              : "Use your Google account to discover and share agricultural supplies. No registration email or password needed."}
+              ? language === "am" ? "የአስተዳዳሪ መለያን ተጠቅመው ማስታወቂያዎችን ይመልከቱ፣ ተጠቃሚዎችን ያስተዳድሩ።" : language === "om" ? "Herrega bulchaa fayyadamuun beeksisa fi fayyadamtoota bulchi." : "Use the administrator account to review listings, manage users, and maintain marketplace settings."
+              : language === "am" ? "የግብርና እቃዎችን ለማግኘትና ለማካፈል የGoogle መለያዎን ይጠቀሙ።" : language === "om" ? "Meeshaalee qonnaa argachuu fi qooduu için herrega Google kee fayyadami." : "Use your Google account to discover and share agricultural supplies. No registration email or password needed."}
           </Text>
 
           {adminMode ? (

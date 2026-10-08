@@ -14,10 +14,12 @@ import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { signOut, firestore } from "@/lib/firebase";
 import { getPlatformSettings } from "@/lib/backend/settings";
 import { submitRegistrationPayment } from "@/lib/backend/payments";
+import { useTranslation } from "@/lib/i18n-provider";
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const colors = useColors("light");
   const { session, profile, loading, profileLoading } = useFirebaseAuth();
+  const { language, t } = useTranslation();
   const [telebirrNumber, setTelebirrNumber] = useState("");
   const [telebirrAccountName, setTelebirrAccountName] = useState("");
   const [name, setName] = useState("");
@@ -30,6 +32,8 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!session || profile?.status === "ACTIVE") return;
+    // This effect intentionally mirrors the live profile into editable form fields.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setName(
       profile?.name && profile.name !== "SIGLA member"
         ? profile.name
@@ -110,31 +114,29 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         ]}
       >
         <Text style={[styles.eyebrow, { color: colors.secondaryDark }]}>
-          ACCOUNT VERIFICATION
+          {language === "am" ? "የመለያ ማረጋገጫ" : language === "om" ? "MIRKANEESSA HERREGAA" : "ACCOUNT VERIFICATION"}
         </Text>
         <Text style={[styles.title, { color: colors.foreground }]}>
-          Complete your SIGLA account
+          {language === "am" ? "የSIGLA መለያዎን ያጠናቅቁ" : language === "om" ? "Herrega SIGLA kee guuti" : "Complete your SIGLA account"}
         </Text>
         <Text style={[styles.body, { color: colors.muted }]}>
-          Sign in with Google is complete. Before you can browse and post
-          agricultural supplies, send the registration payment and share the
-          transaction details below.
+          {language === "am" ? "በGoogle መግባት ተጠናቋል። የግብርና እቃዎችን ከማየትና ከመለጠፍዎ በፊት የምዝገባ ክፍያን ይላኩ።" : language === "om" ? "Google waliin seenuun xumurameera. Meeshaalee qonnaa ilaaluuf kaffaltii galmee ergi." : "Sign in with Google is complete. Before you can browse and post agricultural supplies, send the registration payment and share the transaction details below."}
         </Text>
 
         <View
           style={[styles.detail, { backgroundColor: colors.secondarySoft }]}
         >
           <Text style={[styles.detailLabel, { color: colors.secondaryDark }]}>
-            SEND REGISTRATION PAYMENT TO
+            {language === "am" ? "የምዝገባ ክፍያን ወደ" : language === "om" ? "KAFFALTII GALMEE ERGI" : "SEND REGISTRATION PAYMENT TO"}
           </Text>
           <Text style={[styles.detailValue, { color: colors.secondaryDark }]}>
-            {telebirrNumber || "Admin has not configured a number yet"}
+            {telebirrNumber || (language === "am" ? "አስተዳዳሪው ቁጥር አላዘጋጀም" : language === "om" ? "Bulchaan lakkoofsa hin qopheessine" : "Admin has not configured a number yet")}
           </Text>
           <Text style={[styles.detailValue, { color: colors.secondaryDark }]}>
-            {telebirrAccountName || "Account holder name will appear here"}
+            {telebirrAccountName || (language === "am" ? "የመለያ ባለቤት ስም እዚህ ይታያል" : language === "om" ? "Maqaan abbaa herregaa asitti mul'ata" : "Account holder name will appear here")}
           </Text>
           <Text style={[styles.detailBody, { color: colors.secondaryDark }]}>
-            Amount: {registrationFee.toLocaleString()} ETB
+              {language === "am" ? "መጠን" : language === "om" ? "Hanga" : "Amount"}: {registrationFee.toLocaleString()} ETB
           </Text>
         </View>
 
@@ -143,35 +145,34 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
             style={[styles.successBox, { backgroundColor: colors.primarySoft }]}
           >
             <Text style={[styles.successTitle, { color: colors.primaryDark }]}>
-              Details submitted for review
+              {language === "am" ? "ዝርዝሩ ለግምገማ ተልኳል" : language === "om" ? "Bal'inni qorannoof ergameera" : "Details submitted for review"}
             </Text>
             <Text style={[styles.successBody, { color: colors.primaryDark }]}>
-              An administrator will verify your Telebirr transaction. Your
-              marketplace access will open after approval.
+              {language === "am" ? "አስተዳዳሪው የTelebirr ግብይትዎን ያረጋግጣል። ከፀደቀ በኋላ ገበያውን መጠቀም ይችላሉ።" : language === "om" ? "Bulchaan kaffaltii Telebirr kee mirkaneessa. Erga mirkanaa'ee booda gabaa fayyadamuu dandeessa." : "An administrator will verify your Telebirr transaction. Your marketplace access will open after approval."}
             </Text>
           </View>
         ) : (
           <View style={styles.form}>
             <Field
-              label="Full name"
+              label={language === "am" ? "ሙሉ ስም" : language === "om" ? "Maqaa guutuu" : "Full name"}
               value={name}
               onChangeText={setName}
-              placeholder="Your full name"
+              placeholder={language === "am" ? "ሙሉ ስምዎ" : language === "om" ? "Maqaa kee guutuu" : "Your full name"}
               colors={colors}
             />
             <Field
-              label="Sender phone number"
+              label={language === "am" ? "የላኪ ስልክ ቁጥር" : language === "om" ? "Lakkoofsa bilbila ergituu" : "Sender phone number"}
               value={phone}
               onChangeText={setPhone}
-              placeholder="Phone used to send Telebirr"
+              placeholder={language === "am" ? "Telebirr ለመላክ የተጠቀሙበት ስልክ" : language === "om" ? "Bilbila Telebirr itti ergite" : "Phone used to send Telebirr"}
               keyboardType="phone-pad"
               colors={colors}
             />
             <Field
-              label="Telebirr transaction number"
+              label={language === "am" ? "የTelebirr ግብይት ቁጥር" : language === "om" ? "Lakkoofsa kaffaltii Telebirr" : "Telebirr transaction number"}
               value={transactionReference}
               onChangeText={setTransactionReference}
-              placeholder="e.g. FT123456789"
+              placeholder="FT123456789"
               autoCapitalize="characters"
               colors={colors}
             />
@@ -194,7 +195,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
                 <ActivityIndicator color={colors.white} />
               ) : (
                 <Text style={styles.submitText}>
-                  Submit for administrator review
+                  {language === "am" ? "ለአስተዳዳሪ ግምገማ ላክ" : language === "om" ? "Qorannoo bulchaaf ergi" : "Submit for administrator review"}
                 </Text>
               )}
             </Pressable>
@@ -203,7 +204,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
         {!waitingForReview && !error ? (
           <Text style={[styles.status, { color: colors.muted }]}>
-            Current status:{" "}
+          {language === "am" ? "የአሁኑ ሁኔታ" : language === "om" ? "Haala ammaa" : "Current status"}:{" "}
             {(profile?.status ?? "REGISTERED").replaceAll("_", " ")}
           </Text>
         ) : null}
@@ -212,7 +213,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
           style={styles.signOut}
         >
           <Text style={[styles.signOutText, { color: colors.error }]}>
-            Sign out
+            {t("common.signOut")}
           </Text>
         </Pressable>
       </View>

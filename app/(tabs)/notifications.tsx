@@ -14,9 +14,11 @@ import {
   type ConversationSummary,
 } from "@/lib/backend/messages";
 import { router } from "expo-router";
+import { useTranslation } from "@/lib/i18n-provider";
 
 export default function MessagesScreen() {
   const { session } = useFirebaseAuth();
+  const { language, t } = useTranslation();
   const [items, setItems] = useState<ConversationSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +39,7 @@ export default function MessagesScreen() {
   return (
     <View style={styles.root}>
       <View style={styles.topbar}>
-        <Text style={styles.topbarTitle}>MESSAGES</Text>
+        <Text style={styles.topbarTitle}>{t("common.messages")}</Text>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Start a new post"
@@ -62,10 +64,9 @@ export default function MessagesScreen() {
               size={42}
               color="#8C969E"
             />
-            <Text style={styles.emptyTitle}>No conversations yet</Text>
+          <Text style={styles.emptyTitle}>{language === "am" ? "እስካሁን ውይይት የለም" : language === "om" ? "Haasawni hin jiru" : "No conversations yet"}</Text>
             <Text style={styles.emptyBody}>
-              Open a supply listing and tap Message seller to start a private
-              conversation.
+              {language === "am" ? "የእቃ ማስታወቂያ ይክፈቱና የሻጭ መልዕክትን ይጫኑ።" : language === "om" ? "Beeksisa banuun Ergaa gurguraa cuqaasi; haasaa dhuunfaa jalqabi." : "Open a supply listing and tap Message seller to start a private conversation."}
             </Text>
           </View>
         ) : (

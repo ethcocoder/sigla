@@ -17,13 +17,13 @@ export default function SettingsScreen() {
           <Ionicons name="close" size={25} color={colors.foreground} />
         </Pressable>
         <Text style={[styles.eyebrow, { color: colors.primaryDark }]}>
-          ACCOUNT
+          {t("common.account")}
         </Text>
         <Text style={[styles.title, { color: colors.foreground }]}>
-          Settings
+          {t("common.settings")}
         </Text>
         <Text style={[styles.subtitle, { color: colors.muted }]}>
-          Manage your SIGLA preferences.
+          {language === "am" ? "የSIGLA ምርጫዎችዎን ያስተዳድሩ።" : language === "om" ? "Filannoo SIGLA kee bulchi." : "Manage your SIGLA preferences."}
         </Text>
         <View
           style={[
@@ -32,19 +32,19 @@ export default function SettingsScreen() {
           ]}
         >
           <Text style={[styles.label, { color: colors.muted }]}>
-            Account name
+            {language === "am" ? "የመለያ ስም" : language === "om" ? "Maqaa herregaa" : "Account name"}
           </Text>
           <Text style={[styles.value, { color: colors.foreground }]}>
             {profile?.name || "SIGLA member"}
           </Text>
           <Text style={[styles.label, { color: colors.muted, marginTop: 16 }]}>
-            Account phone
+            {language === "am" ? "የመለያ ስልክ" : language === "om" ? "Bilbila herregaa" : "Account phone"}
           </Text>
           <Text style={[styles.value, { color: colors.foreground }]}>
             {profile?.phone || "Not provided"}
           </Text>
         </View>
-        <Text style={[styles.section, { color: colors.muted }]}>LANGUAGE</Text>
+        <Text style={[styles.section, { color: colors.muted }]}>{t("profile.language")}</Text>
         <View
           style={[
             styles.languageCard,
@@ -87,6 +87,22 @@ export default function SettingsScreen() {
               {t("profile.languageAmharic")}
             </Text>
           </Pressable>
+          <Pressable
+            onPress={() => setLanguage("om")}
+            style={[
+              styles.language,
+              language === "om" && { backgroundColor: colors.primarySoft },
+            ]}
+          >
+            <Text
+              style={[
+                styles.languageText,
+                { color: language === "om" ? colors.primaryDark : colors.muted },
+              ]}
+            >
+              {t("profile.languageOromo")}
+            </Text>
+          </Pressable>
         </View>
         <View style={[styles.note, { backgroundColor: colors.primarySoft }]}>
           <Ionicons
@@ -95,8 +111,11 @@ export default function SettingsScreen() {
             color={colors.primaryDark}
           />
           <Text style={[styles.noteText, { color: colors.primaryDark }]}>
-            Your account status and payment verification are managed securely by
-            SIGLA administrators.
+            {language === "am"
+              ? "የመለያዎ ሁኔታ እና የክፍያ ማረጋገጫ በSIGLA አስተዳዳሪዎች በደህንነት ይተዳደራል።"
+              : language === "om"
+                ? "Haalli herregaa fi mirkaneessi kaffaltii kee bulchitoota SIGLA tiin nageenyaan bulu."
+                : "Your account status and payment verification are managed securely by SIGLA administrators."}
           </Text>
         </View>
       </ScrollView>

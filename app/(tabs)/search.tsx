@@ -14,7 +14,7 @@ import type { MarketplacePost } from "@/types/domain";
 import { useTranslation } from "@/lib/i18n-provider";
 
 export default function WatchlistScreen() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { categoryId } = useLocalSearchParams<{ categoryId?: string }>();
   const [posts, setPosts] = useState<MarketplacePost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,7 +50,7 @@ export default function WatchlistScreen() {
             <Ionicons name="star-outline" size={40} color="#8C969E" />
             <Text style={styles.emptyTitle}>{t("category.empty")}</Text>
             <Text style={styles.emptyBody}>
-              Tap the star on a supply listing to keep it here.
+              {language === "am" ? "የእቃ ማስታወቂያን ለማስቀመጥ ኮከቡን ይጫኑ።" : language === "om" ? "Beeksisa kuusuuf urjii cuqaasi." : "Tap the star on a supply listing to keep it here."}
             </Text>
           </View>
         ) : (
@@ -73,7 +73,7 @@ export default function WatchlistScreen() {
                 <Text style={styles.price}>
                   {post.priceType === "FIXED" && post.price
                     ? `${post.price.toLocaleString()} Birr`
-                    : "Contact seller"}
+                    : language === "am" ? "ሻጩን ያግኙ" : language === "om" ? "Gurguraa qunnami" : "Contact seller"}
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color="#8C969E" />
